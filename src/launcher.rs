@@ -103,14 +103,12 @@ impl Launcher {
             return;
         }
 
-        if let Err(e) = unsafe {
-            Command::new("sh")
-                .arg("-c")
-                .arg(self.model.borrow()[self.selected as usize].exec.clone())
-                .arg("&")
-                .arg("disown")
-        }
-        .spawn()
+        if let Err(e) = Command::new("sh")
+            .arg("-c")
+            .arg(self.model.borrow()[self.selected as usize].exec.clone())
+            .arg("&")
+            .arg("disown")
+            .spawn()
         {
             error!("Couldn't launch program: {}", e);
         }
