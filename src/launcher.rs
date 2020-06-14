@@ -1,7 +1,15 @@
 use crate::keyboard;
 
+use crate::search::APPLICATIONS;
 use qmetaobject::*;
 use std::cell::RefCell;
+use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::str;
+
+use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
 
 #[derive(QObject, Default)]
 pub struct Launcher {
@@ -41,14 +49,12 @@ impl Launcher {
 
         self.settings_changed();
 
-        self.model.borrow_mut().push(ApplicationEntry {
-            name: "HOWDY12345".to_string(),
-        });
-
-        self.model.borrow_mut().push(ApplicationEntry {
-            name: "HOWDY2".to_string(),
-        });
-        self.model_changed();
+        self.set(
+            APPLICATIONS
+                .keys()
+                .map(|x| ApplicationEntry::new(x.to_string()))
+                .collect(),
+        );
 
         let self_qpointer = QPointer::from(&*self);
         let toggle_visibility = qmetaobject::queued_callback(move |()| {
@@ -97,11 +103,40 @@ impl Launcher {
     }
 
     fn search(&mut self, query: String) {
+        let matcher = SkimMatcherV2::default();
+        let mut list: Vec<(i64, String)> = APPLICATIONS
+            .keys()
+            .map(|x| (matcher.fuzzy_match(x, &query), x))
+            .filter_map(|x| {
+                if (x.0.is_some()) {
+                    Some((x.0.unwrap(), x.1.to_string()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        list.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+        self.set(
+            list.iter()
+                .map(|x| ApplicationEntry::new(x.1.to_string()))
+                .collect(),
+        );
         println!("{}", query);
+    }
+
+    fn set(&mut self, list: Vec<ApplicationEntry>) {
+        self.model.borrow_mut().reset_data(list);
+        self.model_changed();
     }
 }
 
 #[derive(Default, Clone, SimpleListItem)]
 struct ApplicationEntry {
     pub name: String,
+}
+
+impl ApplicationEntry {
+    pub fn new(name: String) -> Self {
+        ApplicationEntry { name }
+    }
 }

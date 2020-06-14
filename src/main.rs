@@ -19,6 +19,8 @@ fn main() {
     qml_register_type::<Launcher>(cstr!("Launcher"), 1, 0, cstr!("Launcher"));
     let mut engine = QmlEngine::new();
 
+    &APPLICATIONS;
+
     engine.load_data(include_str!("main.qml").into());
     engine.exec();
 }
