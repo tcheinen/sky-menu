@@ -17,6 +17,7 @@ Window {
     onVisibleChanged: {
             if (visible) {
                 raise()
+                query_input.text = ""
             }
     }
 
@@ -38,6 +39,7 @@ Window {
             anchors.right: parent.right
 
             TextInput {
+                id: query_input
                 color: "#000000"
                 anchors.leftMargin: 30
                 horizontalAlignment: Text.AlignLeft
@@ -47,7 +49,7 @@ Window {
                 font.family: "Times New Roman"
                 verticalAlignment: Text.AlignVCenter
                 anchors.fill: parent
-                focus: launcher.focus
+                focus: true
                 onTextChanged: launcher.search(text)
                 Keys.onUpPressed: launcher.up()
                 Keys.onDownPressed: launcher.down()
