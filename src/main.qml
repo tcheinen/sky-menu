@@ -64,6 +64,7 @@ Window {
             anchors.left: parent.left
             height: window.height * .9
             currentIndex: launcher.selected
+            highlightMoveDuration: 0
             model: launcher.model
             highlight: Rectangle {
                 color: "steelblue"
