@@ -3,10 +3,10 @@ use crate::keyboard;
 use crate::search::APPLICATIONS;
 use qmetaobject::*;
 use std::cell::RefCell;
-use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::str;
+
+
+
+
 
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
@@ -108,7 +108,7 @@ impl Launcher {
             .keys()
             .map(|x| (matcher.fuzzy_match(x, &query), x))
             .filter_map(|x| {
-                if (x.0.is_some()) {
+                if x.0.is_some() {
                     Some((x.0.unwrap(), x.1.to_string()))
                 } else {
                     None

@@ -1,12 +1,13 @@
 use freedesktop_entry_parser::parse_entry;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 
 use std::collections::HashMap;
 
 use std::fs;
 
 lazy_static! {
-    pub static ref APPLICATIONS: HashMap<String, HashMap<String, String>> = generate_application_list();
+    pub static ref APPLICATIONS: HashMap<String, HashMap<String, String>> =
+        generate_application_list();
 }
 
 pub fn generate_application_list() -> HashMap<String, HashMap<String, String>> {
