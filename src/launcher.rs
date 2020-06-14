@@ -26,6 +26,7 @@ pub struct Launcher {
     down: qt_method!(fn(&mut self)),
     launch: qt_method!(fn(&mut self)),
     hide: qt_method!(fn(&mut self)),
+    show: qt_method!(fn(&mut self)),
     search: qt_method!(fn(&mut self, query: String)),
     icon: qt_method!(fn(&mut self, icon: String) -> QUrl),
 
@@ -75,20 +76,25 @@ impl Launcher {
         keyboard::listen(predicate, toggle_visibility);
     }
 
+    fn set_selected(&mut self, index: i32) {
+        self.selected = index;
+        self.selected_changed();
+    }
+
     fn up(&mut self) {
         if self.model.borrow().row_count() == 0 {
             return;
         }
-        self.selected = (self.selected - 1).rem_euclid(self.model.borrow().row_count());
-        self.selected_changed();
+        let max_index = self.model.borrow().row_count();
+        self.set_selected((self.selected - 1).rem_euclid(max_index))
     }
 
     fn down(&mut self) {
         if self.model.borrow().row_count() == 0 {
             return;
         }
-        self.selected = (self.selected + 1).rem_euclid(self.model.borrow().row_count());
-        self.selected_changed();
+        let max_index = self.model.borrow().row_count();
+        self.set_selected((self.selected + 1).rem_euclid(max_index));
     }
 
     fn launch(&mut self) {
@@ -107,13 +113,15 @@ impl Launcher {
     }
 
     fn hide(&mut self) {
-        if self.model.borrow().row_count() == 0 {
-            return;
-        }
         self.visible = false;
         self.visible_changed();
     }
 
+    fn show(&mut self) {
+        self.visible = true;
+        self.visible_changed();
+        self.set_selected(0);
+    }
     fn search(&mut self, query: String) {
         let matcher = SkimMatcherV2::default();
         let mut list: Vec<(i64, String)> = APPLICATIONS
@@ -138,6 +146,7 @@ impl Launcher {
                 .map(|x| x.clone())
                 .collect(),
         );
+        self.set_selected(0);
     }
 
     fn icon(&mut self, name: String) -> QUrl {
@@ -145,7 +154,9 @@ impl Launcher {
     }
 
     fn set(&mut self, list: Vec<Application>) {
-        self.model.borrow_mut().reset_data(list);
+        self.model
+            .borrow_mut()
+            .reset_data(list.into_iter().take(9).collect());
         self.model_changed();
     }
 }
