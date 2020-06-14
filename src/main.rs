@@ -1,8 +1,8 @@
+mod application;
 mod error;
 mod icon;
 mod keyboard;
 mod launcher;
-mod search;
 
 #[macro_use]
 extern crate lazy_static;
@@ -13,7 +13,7 @@ use cstr::*;
 use log::log;
 use qmetaobject::*;
 
-use crate::search::APPLICATIONS;
+use crate::application::APPLICATIONS;
 fn main() {
     env_logger::init();
     install_message_handler(logger);

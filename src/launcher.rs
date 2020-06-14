@@ -1,12 +1,14 @@
 use crate::keyboard;
 
-use crate::search::APPLICATIONS;
+use crate::application::APPLICATIONS;
 use qmetaobject::*;
 use std::cell::RefCell;
 
 use crate::icon::lookup_icon;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
+
+use log::error;
 
 #[derive(QObject, Default)]
 pub struct Launcher {
@@ -90,10 +92,18 @@ impl Launcher {
     }
 
     fn launch(&mut self) {
+        use std::process::Command;
         if self.model.borrow().row_count() == 0 {
             return;
         }
-        println!("{}", self.model.borrow()[self.selected as usize].name);
+        if let Err(e) = Command::new("setsid")
+            .arg(self.model.borrow()[self.selected as usize].exec.clone())
+            .spawn()
+        {
+            error!("Couldn't launch program: {}", e);
+        }
+
+        self.hide();
     }
 
     fn hide(&mut self) {
@@ -144,10 +154,11 @@ impl Launcher {
 pub struct Application {
     pub name: String,
     pub icon: String,
+    pub exec: String,
 }
 
 impl Application {
-    pub fn new(name: String, icon: String) -> Self {
-        Application { name, icon }
+    pub fn new(name: String, icon: String, exec: String) -> Self {
+        Application { name, icon, exec }
     }
 }
