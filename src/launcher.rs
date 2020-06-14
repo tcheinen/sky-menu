@@ -4,10 +4,7 @@ use crate::search::APPLICATIONS;
 use qmetaobject::*;
 use std::cell::RefCell;
 
-
-
-
-
+use crate::icon::lookup_icon;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 
@@ -15,7 +12,7 @@ use fuzzy_matcher::FuzzyMatcher;
 pub struct Launcher {
     base: qt_base_class!(trait QObject),
 
-    model: qt_property!(RefCell<SimpleListModel<ApplicationEntry>>; NOTIFY model_changed),
+    model: qt_property!(RefCell<SimpleListModel<Application>>; NOTIFY model_changed),
     visible: qt_property!(bool; NOTIFY visible_changed),
     height: qt_property!(i32; NOTIFY settings_changed),
     width: qt_property!(i32; NOTIFY settings_changed),
@@ -28,6 +25,7 @@ pub struct Launcher {
     launch: qt_method!(fn(&mut self)),
     hide: qt_method!(fn(&mut self)),
     search: qt_method!(fn(&mut self, query: String)),
+    icon: qt_method!(fn(&mut self, icon: String) -> QUrl),
 
     visible_changed: qt_signal!(),
     settings_changed: qt_signal!(),
@@ -52,7 +50,11 @@ impl Launcher {
         self.set(
             APPLICATIONS
                 .keys()
-                .map(|x| ApplicationEntry::new(x.to_string()))
+                .map(|x| {
+                    APPLICATIONS
+                        .get(&x.to_string())
+                        .map_or(Application::default(), |x| x.clone())
+                })
                 .collect(),
         );
 
@@ -118,25 +120,34 @@ impl Launcher {
         list.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
         self.set(
             list.iter()
-                .map(|x| ApplicationEntry::new(x.1.to_string()))
+                .map(|x| {
+                    APPLICATIONS
+                        .get(&x.1.to_string())
+                        .map_or(Application::default(), |x| x.clone())
+                })
+                .map(|x| x.clone())
                 .collect(),
         );
-        println!("{}", query);
     }
 
-    fn set(&mut self, list: Vec<ApplicationEntry>) {
+    fn icon(&mut self, name: String) -> QUrl {
+        QUrl::from(QString::from(lookup_icon(&name).unwrap_or("".to_string())))
+    }
+
+    fn set(&mut self, list: Vec<Application>) {
         self.model.borrow_mut().reset_data(list);
         self.model_changed();
     }
 }
 
-#[derive(Default, Clone, SimpleListItem)]
-struct ApplicationEntry {
+#[derive(Default, Debug, Clone, SimpleListItem)]
+pub struct Application {
     pub name: String,
+    pub icon: String,
 }
 
-impl ApplicationEntry {
-    pub fn new(name: String) -> Self {
-        ApplicationEntry { name }
+impl Application {
+    pub fn new(name: String, icon: String) -> Self {
+        Application { name, icon }
     }
 }

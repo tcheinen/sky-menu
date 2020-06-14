@@ -1,41 +1,51 @@
 use freedesktop_entry_parser::parse_entry;
-use std::path::{Path};
+use std::path::Path;
 
 use std::collections::HashMap;
 
+use crate::launcher::Application;
 use std::fs;
 
 lazy_static! {
-    pub static ref APPLICATIONS: HashMap<String, HashMap<String, String>> =
-        generate_application_list();
+    pub static ref APPLICATIONS: HashMap<String, Application> = generate_application_list();
 }
 
-pub fn generate_application_list() -> HashMap<String, HashMap<String, String>> {
+fn parse_desktop_entry(filename: &Path) -> Application {
+    let results = parse_entry(&fs::read_to_string(filename).unwrap().into_bytes())
+        .filter_map(|y| y.ok())
+        .filter(|y| y.title == b"Desktop Entry")
+        .map(|y| {
+            let attributes = y
+                .attrs
+                .iter()
+                .map(|z| {
+                    (
+                        String::from_utf8_lossy(z.name).to_string(),
+                        String::from_utf8_lossy(z.value).to_string(),
+                    )
+                })
+                .filter(|x| x.0 == "Name" || x.0 == "Icon")
+                .collect::<HashMap<String, String>>();
+            Application::new(
+                attributes
+                    .get("Name")
+                    .unwrap_or(&"".to_string())
+                    .to_string(),
+                attributes
+                    .get("Icon")
+                    .unwrap_or(&"".to_string())
+                    .to_string(),
+            )
+        })
+        .next();
+    results.unwrap_or(Application::default())
+}
+
+pub fn generate_application_list() -> HashMap<String, Application> {
     fs::read_dir(Path::new("/usr/share/applications"))
         .unwrap()
         .filter_map(|x| x.ok())
-        .filter_map(|x| fs::read_to_string(x.path()).ok())
-        .map(|x| x.into_bytes())
-        .flat_map(|x| {
-            parse_entry(&x)
-                .filter_map(|y| y.ok())
-                .filter(|y| y.title == b"Desktop Entry")
-                .map(|y| {
-                    y.attrs
-                        .iter()
-                        .map(|z| {
-                            (
-                                String::from_utf8_lossy(z.name).to_string(),
-                                String::from_utf8_lossy(z.value).to_string(),
-                            )
-                        })
-                        .collect::<HashMap<String, String>>()
-                })
-                .filter_map(|y: HashMap<String, String>| match y.get("Name") {
-                    Some(name) => Some((name.to_string(), y)),
-                    _ => None,
-                })
-                .collect::<Vec<(String, HashMap<String, String>)>>()
-        })
-        .collect::<HashMap<String, HashMap<String, String>>>()
+        .map(|x| parse_desktop_entry(x.path().as_path()))
+        .map(|x| (x.name.clone(), x))
+        .collect::<HashMap<String, Application>>()
 }

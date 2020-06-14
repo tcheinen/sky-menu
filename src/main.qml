@@ -72,7 +72,13 @@ Window {
             delegate: Item {
                 height: window.height * 0.1
                 width: window.width
+                Image {
+                    height: window.height * 0.1
+                    width: window.height * 0.1
+                    source: launcher.icon(icon)
+                }
                 Text {
+                    leftPadding: window.height * 0.1
                     text: name
                     color: "white"
                 }

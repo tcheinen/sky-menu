@@ -1,3 +1,5 @@
+mod error;
+mod icon;
 mod keyboard;
 mod launcher;
 mod search;
