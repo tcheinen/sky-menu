@@ -203,6 +203,7 @@ dependencies = [
  "env_logger",
  "freedesktop_entry_parser",
  "input",
+ "lazy_static",
  "libc",
  "log",
  "qmetaobject",
