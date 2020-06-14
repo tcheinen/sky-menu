@@ -102,9 +102,15 @@ impl Launcher {
         if self.model.borrow().row_count() == 0 {
             return;
         }
-        if let Err(e) = Command::new("setsid")
-            .arg(self.model.borrow()[self.selected as usize].exec.clone())
-            .spawn()
+
+        if let Err(e) = unsafe {
+            Command::new("sh")
+                .arg("-c")
+                .arg(self.model.borrow()[self.selected as usize].exec.clone())
+                .arg("&")
+                .arg("disown")
+        }
+        .spawn()
         {
             error!("Couldn't launch program: {}", e);
         }
