@@ -1,9 +1,11 @@
 use crate::error::LauncherError;
+use cached::proc_macro::cached;
 use ini::Ini;
 use std::env;
 use std::path::PathBuf;
 
 /// attempt to resolve a single icon theme
+#[cached]
 fn lookup_theme() -> Result<String, LauncherError> {
     let home_directory = env::var("HOME").map_err(|_| LauncherError::ResolveIconThemeError)?;
     let path: PathBuf = [&home_directory, ".config/gtk-3.0/settings.ini"]
@@ -20,7 +22,8 @@ fn lookup_theme() -> Result<String, LauncherError> {
         .to_string())
 }
 
-pub fn lookup_icon(name: &str) -> Result<String, LauncherError> {
+#[cached]
+pub fn lookup_icon(name: String) -> Result<String, LauncherError> {
     let theme = lookup_theme()?;
 
     Ok(

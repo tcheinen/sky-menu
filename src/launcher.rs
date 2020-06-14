@@ -1,6 +1,6 @@
 use crate::keyboard;
 
-use crate::application::APPLICATIONS;
+use crate::application::generate_application_list;
 use qmetaobject::*;
 use std::cell::RefCell;
 
@@ -51,10 +51,10 @@ impl Launcher {
         self.settings_changed();
 
         self.set(
-            APPLICATIONS
+            generate_application_list()
                 .keys()
                 .map(|x| {
-                    APPLICATIONS
+                    generate_application_list()
                         .get(&x.to_string())
                         .map_or(Application::default(), |x| x.clone())
                 })
@@ -128,7 +128,7 @@ impl Launcher {
     }
     fn search(&mut self, query: String) {
         let matcher = SkimMatcherV2::default();
-        let mut list: Vec<(i64, String)> = APPLICATIONS
+        let mut list: Vec<(i64, String)> = generate_application_list()
             .keys()
             .map(|x| (matcher.fuzzy_match(x, &query), x))
             .filter_map(|x| {
@@ -143,7 +143,7 @@ impl Launcher {
         self.set(
             list.iter()
                 .map(|x| {
-                    APPLICATIONS
+                    generate_application_list()
                         .get(&x.1.to_string())
                         .map_or(Application::default(), |x| x.clone())
                 })
@@ -154,7 +154,7 @@ impl Launcher {
     }
 
     fn icon(&mut self, name: String) -> QUrl {
-        QUrl::from(QString::from(lookup_icon(&name).unwrap_or("".to_string())))
+        QUrl::from(QString::from(lookup_icon(name).unwrap_or("".to_string())))
     }
 
     fn set(&mut self, list: Vec<Application>) {

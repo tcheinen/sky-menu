@@ -4,16 +4,13 @@ mod icon;
 mod keyboard;
 mod launcher;
 
-#[macro_use]
-extern crate lazy_static;
-
 use crate::launcher::*;
 use cstr::*;
 
 use log::log;
 use qmetaobject::*;
 
-use crate::application::APPLICATIONS;
+use crate::application::generate_application_list;
 fn main() {
     env_logger::init();
     install_message_handler(logger);
@@ -21,7 +18,7 @@ fn main() {
     qml_register_type::<Launcher>(cstr!("Launcher"), 1, 0, cstr!("Launcher"));
     let mut engine = QmlEngine::new();
 
-    &APPLICATIONS;
+    generate_application_list();
 
     engine.load_data(include_str!("main.qml").into());
     engine.exec();
