@@ -20,6 +20,7 @@ pub struct Launcher {
     width: qt_property!(i32; NOTIFY settings_changed),
     selected: qt_property!(i32; NOTIFY selected_changed),
     focus: qt_property!(bool; NOTIFY focus_changed),
+    model_len: qt_property!(i32; NOTIFY model_len_changed),
 
     setup: qt_method!(fn(&mut self)),
     up: qt_method!(fn(&mut self)),
@@ -35,6 +36,7 @@ pub struct Launcher {
     model_changed: qt_signal!(),
     selected_changed: qt_signal!(),
     focus_changed: qt_signal!(),
+    model_len_changed: qt_signal!(),
 }
 
 impl Launcher {
@@ -161,7 +163,9 @@ impl Launcher {
         self.model
             .borrow_mut()
             .reset_data(list.into_iter().take(9).collect());
+        self.model_len = self.model.borrow().row_count();
         self.model_changed();
+        self.model_len_changed();
     }
 }
 

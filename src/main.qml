@@ -39,12 +39,13 @@ Window {
             id: background
             color: "#00153D"
             border.width: 0
-            anchors.fill: parent
             opacity: 0.5
+            height: launcher.height * (launcher.model_len + 1) * .1
+            width: launcher.width
         }
 
         Rectangle {
-            height: window.height * .1
+            height: launcher.height * .1
             color: "#D3F8E2"
             anchors.left: parent.left
             anchors.right: parent.right
@@ -73,7 +74,7 @@ Window {
             anchors.bottom: parent.bottom
             anchors.right: parent.right
             anchors.left: parent.left
-            height: window.height * .9
+            height: launcher.height * .9
             currentIndex: launcher.selected
             highlightMoveDuration: 0
             model: launcher.model
@@ -82,15 +83,15 @@ Window {
             }
             delegate: Item {
                 id: listItem
-                height: window.height * 0.1
-                width: window.width
+                height: launcher.height * 0.1
+                width: launcher.width
                 Image {
-                    height: window.height * 0.1
-                    width: window.height * 0.1
+                    height: launcher.height * 0.1
+                    width: launcher.height * 0.1
                     source: launcher.icon(icon)
                 }
                 Text {
-                    leftPadding: window.height * 0.1
+                    leftPadding: launcher.height * 0.1
                     text: name
                     anchors.fill: parent
                     font.family: "Iosevka Aile"
