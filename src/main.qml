@@ -1,7 +1,7 @@
 import QtQuick 2.6
 import QtQuick.Window 2.2
-import Launcher 1.0
 
+import Launcher 1.0
 Window {
     id: window
     visible: launcher.visible
@@ -15,10 +15,10 @@ Window {
     }
 
     onVisibleChanged: {
-            if (visible) {
-                raise()
-                query_input.text = ""
-            }
+        if (visible) {
+            raise()
+            query_input.text = ""
+        }
     }
 
     onActiveChanged: {
@@ -33,14 +33,19 @@ Window {
         setY(Screen.height / 2 - height / 2)
     }
 
-    Rectangle {
-        id: rectangle
-        color: "#808080"
+    Item {
         anchors.fill: parent
+        Rectangle {
+            id: background
+            color: "#00153D"
+            border.width: 0
+            anchors.fill: parent
+            opacity: 0.5
+        }
 
         Rectangle {
             height: window.height * .1
-            color: "#ffffff"
+            color: "#D3F8E2"
             anchors.left: parent.left
             anchors.right: parent.right
 
@@ -52,7 +57,7 @@ Window {
                 font.pointSize: 16
                 renderType: Text.QtRendering
                 cursorVisible: true
-                font.family: "Times New Roman"
+                font.family: "Iosevka Aile"
                 verticalAlignment: Text.AlignVCenter
                 anchors.fill: parent
                 focus: true
@@ -73,10 +78,10 @@ Window {
             highlightMoveDuration: 0
             model: launcher.model
             highlight: Rectangle {
-                color: "steelblue"
-
+                color: "#BA9BFF"
             }
             delegate: Item {
+                id: listItem
                 height: window.height * 0.1
                 width: window.width
                 Image {
@@ -87,7 +92,11 @@ Window {
                 Text {
                     leftPadding: window.height * 0.1
                     text: name
-                    color: "white"
+                    anchors.fill: parent
+                    font.family: "Iosevka Aile"
+                    verticalAlignment: Text.AlignVCenter
+                    font.pointSize: 16
+                    color: listItem.ListView.isCurrentItem ? "black" : "white"
                 }
             }
         }

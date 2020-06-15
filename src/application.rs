@@ -65,5 +65,6 @@ pub fn generate_application_list() -> HashMap<String, Application> {
         .filter_map(|x| x.ok())
         .map(|x| parse_desktop_entry(x.path()))
         .map(|x| (x.name.clone(), x))
+        .filter(|x| &x.1.name != "")
         .collect::<HashMap<String, Application>>()
 }

@@ -46,7 +46,7 @@ impl Launcher {
         self.focus_changed();
 
         self.height = 500;
-        self.width = 300;
+        self.width = 400;
 
         self.settings_changed();
 
