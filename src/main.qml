@@ -21,6 +21,12 @@ Window {
             }
     }
 
+    onActiveChanged: {
+        if (!active) {
+            launcher.hide()
+        }
+    }
+
     Component.onCompleted: {
         launcher.setup()
         setX(Screen.width / 2 - width / 2)
