@@ -156,6 +156,12 @@ impl Launcher {
                     None
                 }
             })
+            .map(|(weight, app)| {
+                (
+                    std::cmp::min(self.usage_count.get(&app) as i64 * 5, 50) + weight,
+                    app,
+                )
+            })
             .collect();
         list.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
         self.set(
