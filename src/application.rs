@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::launcher::Application;
 use cached::proc_macro::cached;
-use std::fs;
+use std::{env, fs};
 
 /// we just launch everything with the default arguments so we need to filter out any of the FreeDesktop arg specifiers
 #[cached]
@@ -60,11 +60,18 @@ fn parse_desktop_entry(filename: PathBuf) -> Application {
 
 #[cached]
 pub fn generate_application_list() -> HashMap<String, Application> {
-    fs::read_dir(Path::new("/usr/share/applications"))
-        .unwrap()
-        .filter_map(|x| x.ok())
-        .map(|x| parse_desktop_entry(x.path()))
-        .map(|x| (x.name.clone(), x))
-        .filter(|x| &x.1.name != "")
+    env::var("XDG_DATA_DIRS")
+        .unwrap_or("/usr/local/share/:/usr/share/".to_string())
+        .split(":")
+        .map(|x| Path::new(x).join("applications"))
+        .filter(|x| x.exists())
+        .flat_map(|path| {
+            fs::read_dir(path)
+                .unwrap()
+                .filter_map(|x| x.ok())
+                .map(|x| parse_desktop_entry(x.path()))
+                .map(|x| (x.name.clone(), x))
+                .filter(|x| &x.1.name != "")
+        })
         .collect::<HashMap<String, Application>>()
 }
