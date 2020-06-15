@@ -10,6 +10,8 @@ Window {
     flags: Qt.Dialog | Qt.FramelessWindowHint
     color: "#00000000"
 
+    SystemPalette { id: palette; colorGroup: SystemPalette.Active }
+
     Launcher {
         id: launcher
     }
@@ -37,7 +39,7 @@ Window {
         anchors.fill: parent
         Rectangle {
             id: background
-            color: "#00153D"
+            color: palette.window
             border.width: 0
             opacity: 0.5
             height: launcher.height * (launcher.model_len + 1) * .1
@@ -46,13 +48,13 @@ Window {
 
         Rectangle {
             height: launcher.height * .1
-            color: "#D3F8E2"
+            color: palette.base
             anchors.left: parent.left
             anchors.right: parent.right
 
             TextInput {
                 id: query_input
-                color: "#000000"
+                color:  palette.text
                 anchors.leftMargin: 30
                 horizontalAlignment: Text.AlignLeft
                 font.pointSize: 16
@@ -79,7 +81,7 @@ Window {
             highlightMoveDuration: 0
             model: launcher.model
             highlight: Rectangle {
-                color: "#BA9BFF"
+                color: palette.highlight
             }
             delegate: Item {
                 id: listItem
@@ -97,7 +99,7 @@ Window {
                     font.family: "Iosevka Aile"
                     verticalAlignment: Text.AlignVCenter
                     font.pointSize: 16
-                    color: listItem.ListView.isCurrentItem ? "black" : "white"
+                    color: listItem.ListView.isCurrentItem ? palette.highlightedText : palette.windowText
                 }
             }
         }
