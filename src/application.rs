@@ -44,7 +44,7 @@ fn parse_desktop_entry(filename: PathBuf) -> Application {
                     .to_string(),
                 attributes
                     .get("Icon")
-                    .unwrap_or(&"".to_string())
+                    .unwrap_or(&"application-x-executable".to_string())
                     .to_string(),
                 filter_exec(
                     attributes
