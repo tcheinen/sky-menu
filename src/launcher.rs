@@ -8,7 +8,14 @@ use crate::icon::lookup_icon;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 
-use log::error;
+use log::{error, warn};
+use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
+use std::{env, fs};
+
+use cached::proc_macro::cached;
 
 #[derive(QObject, Default)]
 pub struct Launcher {
@@ -21,6 +28,8 @@ pub struct Launcher {
     selected: qt_property!(i32; NOTIFY selected_changed),
     focus: qt_property!(bool; NOTIFY focus_changed),
     model_len: qt_property!(i32; NOTIFY model_len_changed),
+
+    usage_count: UsageCount,
 
     setup: qt_method!(fn(&mut self)),
     up: qt_method!(fn(&mut self)),
@@ -73,6 +82,11 @@ impl Launcher {
             }
         });
 
+        let mut data_dir = get_data_dir();
+        data_dir.push("usage.json");
+
+        self.usage_count = UsageCount::from(data_dir);
+
         // keycode 29 -> lctrl, 97 -> rctrl,  57 -> space
         let predicate = |state: [bool; 256]| (state[29] || state[97]) && state[57];
         keyboard::listen(predicate, toggle_visibility);
@@ -105,16 +119,18 @@ impl Launcher {
             return;
         }
 
+        let app = self.model.borrow()[self.selected as usize].clone();
+
         if let Err(e) = Command::new("sh")
             .arg("-c")
-            .arg(self.model.borrow()[self.selected as usize].exec.clone())
+            .arg(app.exec.clone())
             .arg("&")
             .arg("disown")
             .spawn()
         {
             error!("Couldn't launch program: {}", e);
         }
-
+        self.usage_count.inc(&app.name);
         self.hide();
     }
 
@@ -166,6 +182,62 @@ impl Launcher {
         self.model_len = self.model.borrow().row_count();
         self.model_changed();
         self.model_len_changed();
+    }
+}
+
+#[cached]
+fn get_data_dir() -> PathBuf {
+    match env::var("XDG_DATA_HOME") {
+        Ok(x) => PathBuf::from(x),
+        Err(_) => match env::var("HOME") {
+            Ok(x) => Path::new(&x).join(Path::new(".local/share")),
+            Err(_) => {
+                warn!("Couldn't resolve $XDG_DATA_HOME or $HOME, using cwd for usage database");
+                PathBuf::from(".")
+            }
+        },
+    }
+    .join(Path::new("launcher"))
+    .to_path_buf()
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct UsageCount {
+    store: HashMap<String, i32>,
+}
+
+impl From<PathBuf> for UsageCount {
+    fn from(x: PathBuf) -> Self {
+        let json = fs::read_to_string(&x).unwrap_or("{}".to_string());
+        UsageCount {
+            store: serde_json::from_str(&json).unwrap_or(HashMap::new()),
+        }
+    }
+}
+
+impl UsageCount {
+    pub fn inc(&mut self, app: &str) {
+        self.set(app, self.get(app) + 1)
+    }
+    pub fn get(&self, app: &str) -> i32 {
+        self.store.get(app).unwrap_or(&0).clone()
+    }
+
+    pub fn set(&mut self, app: &str, val: i32) {
+        self.store.insert(app.to_string(), val);
+        let json = match serde_json::to_string(&self.store) {
+            Ok(x) => x,
+            Err(e) => {
+                warn!("Couldn't serialize usage database to json: {}", e);
+                return;
+            }
+        };
+        let mut out_loc = get_data_dir();
+
+        // TODO handle errors here aka ignore them and warn in console
+        fs::create_dir_all(out_loc.as_path());
+        out_loc.push(Path::new("usage.json"));
+        fs::write(out_loc.as_path(), json);
     }
 }
 
