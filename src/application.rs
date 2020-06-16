@@ -7,17 +7,23 @@ use crate::launcher::Application;
 use cached::proc_macro::cached;
 use std::{env, fs};
 
-/// we just launch everything with the default arguments so we need to filter out any of the FreeDesktop arg specifiers
+/// replace the format specifiers - most get replaced with nothing because they're for parameters or deprecated
+/// %i is replaced with the Icon key, %c is replaced with the name, %k is replaced with the URI
 #[cached]
-fn filter_exec(exec: String) -> String {
+fn filter_exec(exec: String, icon: String, name: String, uri: String) -> String {
     exec.replace("%F", "")
         .replace("%f", "")
         .replace("%U", "")
         .replace("%u", "")
         .replace("%D", "")
         .replace("%d", "")
-        .replace("%k", "")
         .replace("%v", "")
+        .replace("%n", "")
+        .replace("%N", "")
+        .replace("%m", "")
+        .replace("%i", &icon)
+        .replace("%c", &name)
+        .replace("%k", &uri)
 }
 
 #[cached]
@@ -37,22 +43,28 @@ fn parse_desktop_entry(filename: PathBuf) -> Application {
                 })
                 .filter(|x| x.0 == "Name" || x.0 == "Icon" || x.0 == "Exec")
                 .collect::<HashMap<String, String>>();
-            Application::new(
-                attributes
-                    .get("Name")
-                    .unwrap_or(&"".to_string())
-                    .to_string(),
-                attributes
-                    .get("Icon")
-                    .unwrap_or(&"application-x-executable".to_string())
-                    .to_string(),
-                filter_exec(
-                    attributes
-                        .get("Exec")
-                        .unwrap_or(&"".to_string())
-                        .to_string(),
-                ),
-            )
+            let name = attributes
+                .get("Name")
+                .unwrap_or(&"".to_string())
+                .to_string();
+
+            let icon = attributes
+                .get("Icon")
+                .unwrap_or(&"application-x-executable".to_string())
+                .to_string();
+
+            let exec_pre = attributes
+                .get("Exec")
+                .unwrap_or(&"".to_string())
+                .to_string();
+
+            let exec = filter_exec(
+                exec_pre,
+                icon.clone(),
+                name.clone(),
+                filename.to_string_lossy().into(),
+            );
+            Application::new(name, icon, exec)
         })
         .next();
     results.unwrap_or(Application::default())
@@ -74,4 +86,51 @@ pub fn generate_application_list() -> HashMap<String, Application> {
                 .filter(|x| &x.1.name != "")
         })
         .collect::<HashMap<String, Application>>()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::application::filter_exec;
+
+    #[test]
+    fn it_filters_exec() {
+        assert_eq!(
+            filter_exec("howdy!".into(), "".into(), "".into(), "".into()),
+            "howdy!"
+        );
+        assert_eq!(
+            filter_exec("howdy!%F".into(), "".into(), "".into(), "".into()),
+            "howdy!"
+        );
+        assert_eq!(
+            filter_exec("ho%fwdy!".into(), "".into(), "".into(), "".into()),
+            "howdy!"
+        );
+        assert_eq!(
+            filter_exec(
+                "%f%F%u%U%d%D%n%N%v%m".into(),
+                "".into(),
+                "".into(),
+                "".into()
+            ),
+            ""
+        );
+        assert_eq!(
+            filter_exec("%i".into(), "application".into(), "".into(), "".into()),
+            "application"
+        );
+        assert_eq!(
+            filter_exec("%c".into(), "".into(), "Files".into(), "".into()),
+            "Files"
+        );
+        assert_eq!(
+            filter_exec(
+                "%k".into(),
+                "".into(),
+                "".into(),
+                "/usr/share/applications/firefox.desktop".into()
+            ),
+            "/usr/share/applications/firefox.desktop"
+        );
+    }
 }
