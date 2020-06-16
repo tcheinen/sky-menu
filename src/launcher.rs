@@ -178,7 +178,10 @@ impl Launcher {
     }
 
     fn icon(&mut self, name: String) -> QUrl {
-        QUrl::from(QString::from(lookup_icon(name).unwrap_or("".to_string())))
+        let path = lookup_icon(name).unwrap_or(
+            lookup_icon("application-x-executable".to_string()).unwrap_or("".to_string()),
+        );
+        QUrl::from(QString::from(path))
     }
 
     fn set(&mut self, list: Vec<Application>) {
