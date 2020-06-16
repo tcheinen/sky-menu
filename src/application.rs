@@ -90,7 +90,7 @@ pub fn generate_application_list() -> HashMap<String, Application> {
 
 #[cfg(test)]
 mod tests {
-    use crate::application::{filter_exec, parse_desktop_entry};
+1    use crate::application::{filter_exec, generate_application_list, parse_desktop_entry};
     use crate::launcher::Application;
     use std::path::PathBuf;
 
@@ -137,7 +137,8 @@ mod tests {
     }
 
     #[test]
-    fn it_parses_firefox() {
+    /// relies on firefox being installed
+    fn it_parses_apps() {
         assert_eq!(
             parse_desktop_entry(PathBuf::from("/usr/share/applications/firefox.desktop")),
             Application {
@@ -146,5 +147,14 @@ mod tests {
                 exec: "/usr/lib/firefox/firefox ".into()
             }
         );
+    }
+
+    #[test]
+    /// relies on firefox and vim being installed
+    fn it_generates_list() {
+        // not going to test strict equality here because it'll vary so much. I'll just check a few
+        let list = generate_application_list();
+        assert!(list.values().any(|x| x.name == "Vim"));
+        assert!(list.values().any(|x| x.name == "Firefox"));
     }
 }
