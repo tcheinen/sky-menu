@@ -13,8 +13,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: install libudev
-        run: sudo apt-get install libudev-dev
+      - name: install dependencies
+        run: sudo apt-get install libudev-dev qt5-qmake
       - name: Build release
         run: cargo build --release --verbose
       - name: Build debug
