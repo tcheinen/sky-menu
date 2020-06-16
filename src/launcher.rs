@@ -250,7 +250,7 @@ impl UsageCount {
     }
 }
 
-#[derive(Default, Debug, Clone, SimpleListItem)]
+#[derive(Default, Debug, Clone, SimpleListItem, Eq, PartialEq)]
 pub struct Application {
     pub name: String,
     pub icon: String,

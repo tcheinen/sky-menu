@@ -90,7 +90,9 @@ pub fn generate_application_list() -> HashMap<String, Application> {
 
 #[cfg(test)]
 mod tests {
-    use crate::application::filter_exec;
+    use crate::application::{filter_exec, parse_desktop_entry};
+    use crate::launcher::Application;
+    use std::path::PathBuf;
 
     #[test]
     fn it_filters_exec() {
@@ -131,6 +133,18 @@ mod tests {
                 "/usr/share/applications/firefox.desktop".into()
             ),
             "/usr/share/applications/firefox.desktop"
+        );
+    }
+
+    #[test]
+    fn it_parses_firefox() {
+        assert_eq!(
+            parse_desktop_entry(PathBuf::from("/usr/share/applications/firefox.desktop")),
+            Application {
+                name: "Firefox".into(),
+                icon: "firefox".into(),
+                exec: "/usr/lib/firefox/firefox ".into()
+            }
         );
     }
 }
