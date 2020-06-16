@@ -90,7 +90,7 @@ pub fn generate_application_list() -> HashMap<String, Application> {
 
 #[cfg(test)]
 mod tests {
-1    use crate::application::{filter_exec, generate_application_list, parse_desktop_entry};
+    use crate::application::{filter_exec, generate_application_list, parse_desktop_entry};
     use crate::launcher::Application;
     use std::path::PathBuf;
 
