@@ -1,0 +1,35 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build release
+        run: cargo build --release --verbose
+      - name: Build debug
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Upload debug artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          # Artifact name
+          name: launcher-debug
+          # Directory containing files to upload
+          path: target/debug/launcher
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          # Artifact name
+          name: launcher-release
+          # Directory containing files to upload
+          path: target/release/launcher
