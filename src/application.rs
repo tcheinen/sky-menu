@@ -149,7 +149,7 @@ mod tests {
         );
     }
 
-    #[test]
+    // #[test]
     /// relies on firefox and vim being installed
     fn it_generates_list() {
         // not going to test strict equality here because it'll vary so much. I'll just check a few
