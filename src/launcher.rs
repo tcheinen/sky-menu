@@ -61,17 +61,6 @@ impl Launcher {
 
         self.settings_changed();
 
-        self.set(
-            generate_application_list()
-                .keys()
-                .map(|x| {
-                    generate_application_list()
-                        .get(&x.to_string())
-                        .map_or(Application::default(), |x| x.clone())
-                })
-                .collect(),
-        );
-
         let self_qpointer = QPointer::from(&*self);
         let toggle_visibility = qmetaobject::queued_callback(move |()| {
             if let Some(qself) = self_qpointer.as_pinned() {
@@ -86,6 +75,8 @@ impl Launcher {
         data_dir.push("usage.json");
 
         self.usage_count = UsageCount::from(data_dir);
+
+        self.search("".into());
 
         // keycode 29 -> lctrl, 97 -> rctrl,  57 -> space
         let predicate = |state: [bool; 256]| (state[29] || state[97]) && state[57];
