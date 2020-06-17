@@ -136,7 +136,7 @@ mod tests {
         );
     }
 
-    #[test]
+    // #[test]
     /// relies on firefox being installed
     fn it_parses_apps() {
         assert_eq!(

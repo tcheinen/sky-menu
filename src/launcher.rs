@@ -50,7 +50,7 @@ pub struct Launcher {
 
 impl Launcher {
     fn setup(&mut self) {
-        self.visible = true;
+        self.visible = false;
         self.visible_changed();
 
         self.focus = true;
