@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 
 use crate::launcher::Application;
+use crate::utility::get_xdg_data_dirs;
 use cached::proc_macro::cached;
 use std::{env, fs};
 
@@ -72,9 +73,8 @@ fn parse_desktop_entry(filename: PathBuf) -> Application {
 
 #[cached]
 pub fn generate_application_list() -> HashMap<String, Application> {
-    env::var("XDG_DATA_DIRS")
-        .unwrap_or("/usr/local/share/:/usr/share/".to_string())
-        .split(":")
+    get_xdg_data_dirs()
+        .iter()
         .map(|x| Path::new(x).join("applications"))
         .filter(|x| x.exists())
         .flat_map(|path| {
