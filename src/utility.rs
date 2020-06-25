@@ -1,13 +1,13 @@
 use std::env;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 
-// FIXME this should return an iterator but im running into borrow checker troubles
-pub fn get_xdg_data_dirs() -> Vec<String> {
+pub fn get_xdg_data_dirs() -> impl Iterator<Item = PathBuf> {
     env::var("XDG_DATA_DIRS")
         .unwrap_or("/usr/local/share/:/usr/share/".into())
         .split(":")
-        .map(String::from)
-        .collect()
+        .map(PathBuf::from)
+        .collect::<Vec<PathBuf>>() // FIXME why do i need to collect here
+        .into_iter()
 }
 
 pub fn get_xdg_application_dirs() -> impl Iterator<Item = PathBuf> {

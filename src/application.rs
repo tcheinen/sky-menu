@@ -4,9 +4,9 @@ use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 
 use crate::launcher::Application;
-use crate::utility::get_xdg_data_dirs;
+use crate::utility::{get_xdg_application_dirs, get_xdg_data_dirs};
 use cached::proc_macro::cached;
-use std::{fs};
+use std::fs;
 
 /// replace the format specifiers - most get replaced with nothing because they're for parameters or deprecated
 /// %i is replaced with the Icon key, %c is replaced with the name, %k is replaced with the URI
@@ -73,9 +73,7 @@ pub fn parse_desktop_entry(filename: PathBuf) -> Application {
 
 #[cached]
 pub fn generate_application_list() -> HashMap<String, Application> {
-    get_xdg_data_dirs()
-        .iter()
-        .map(|x| Path::new(x).join("applications"))
+    get_xdg_application_dirs()
         .filter(|x| x.exists())
         .flat_map(|path| {
             fs::read_dir(path)
