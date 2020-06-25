@@ -1,5 +1,5 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 
 // FIXME this should return an iterator but im running into borrow checker troubles
 pub fn get_xdg_data_dirs() -> Vec<String> {

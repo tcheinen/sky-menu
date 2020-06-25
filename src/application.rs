@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use crate::launcher::Application;
 use crate::utility::get_xdg_data_dirs;
 use cached::proc_macro::cached;
-use std::{env, fs};
+use std::{fs};
 
 /// replace the format specifiers - most get replaced with nothing because they're for parameters or deprecated
 /// %i is replaced with the Icon key, %c is replaced with the name, %k is replaced with the URI

@@ -9,14 +9,14 @@ mod utility;
 use crate::launcher::*;
 use cstr::*;
 
-use crate::application::generate_application_list;
-use crate::utility::get_xdg_data_dirs;
-use cached::once_cell::sync::OnceCell;
-use cached::Cached;
+
+
+
+
 use log::log;
 use qmetaobject::*;
-use std::path::Path;
-use std::{thread, time};
+
+
 fn main() {
     env_logger::init();
     install_message_handler(logger);
