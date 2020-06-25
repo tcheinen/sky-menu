@@ -1,9 +1,9 @@
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
 use input::{Libinput, LibinputInterface};
+use keycode::{KeyMap, KeyMappingId};
 use std::fs::{File, OpenOptions};
 use std::os::unix::io::{FromRawFd, IntoRawFd, RawFd};
 use std::path::Path;
-
 use std::{thread, time};
 
 extern crate libc;
@@ -11,15 +11,26 @@ extern crate libc;
 use input::event::Event::Keyboard;
 
 use libc::{O_RDONLY, O_RDWR, O_WRONLY};
+use std::borrow::Borrow;
 use std::os::unix::fs::OpenOptionsExt;
 
-/// listen for keyboard events
-/// predicate should determine based on the passed state if executor is called
-/// and executor should do whatever you want on that event
-pub fn listen(
-    predicate: impl Fn([bool; 256]) -> bool + Send + 'static,
-    executor: impl Fn(()) + Send + 'static,
-) {
+pub struct KeyboardShortcut {
+    predicate: Vec<KeyMap>,
+    executor: Box<Fn(()) + Send + Sync + 'static>,
+}
+impl KeyboardShortcut {
+    pub fn new(
+        predicate: Vec<KeyMap>,
+        executor: Box<impl Fn(()) + Send + Sync + Clone + 'static>,
+    ) -> Self {
+        KeyboardShortcut {
+            predicate,
+            executor,
+        }
+    }
+}
+
+pub fn listen(shortcuts: Vec<KeyboardShortcut>) {
     thread::spawn(move || {
         let mut state = [false; 256];
         let mut input = Libinput::new_with_udev(Interface);
@@ -33,9 +44,12 @@ pub fn listen(
                         KeyState::Pressed => true,
                         KeyState::Released => false,
                     };
-                    if predicate(state) {
-                        executor(());
-                    }
+                    shortcuts.iter().for_each(|x| {
+                        if x.predicate.iter().all(|y| state[y.evdev as usize]) {
+                            let exec: &(dyn Fn(()) + Send + Sync + 'static) = x.executor.borrow();
+                            exec(());
+                        }
+                    })
                 }
             }
 
@@ -44,6 +58,10 @@ pub fn listen(
         }
     });
 }
+
+/// listen for keyboard events
+/// predicate should determine based on the passed state if executor is called
+/// and executor should do whatever you want on that event
 
 struct Interface;
 

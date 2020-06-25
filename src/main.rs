@@ -2,20 +2,15 @@ mod application;
 mod error;
 mod icon;
 mod inotify_listener;
-mod keyboard;
+mod keyboard_listener;
 mod launcher;
 mod utility;
 
 use crate::launcher::*;
 use cstr::*;
 
-
-
-
-
 use log::log;
 use qmetaobject::*;
-
 
 fn main() {
     env_logger::init();

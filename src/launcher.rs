@@ -1,12 +1,12 @@
-use crate::keyboard;
+use crate::keyboard_listener;
 
 use crate::application::generate_application_list;
-use qmetaobject::*;
-use std::cell::RefCell;
-
 use crate::icon::lookup_icon;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
+use keycode::{KeyMap, KeyMappingId};
+use qmetaobject::*;
+use std::cell::RefCell;
 
 use log::{error, warn};
 use std::collections::HashMap;
@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
+use crate::keyboard_listener::KeyboardShortcut;
 use cached::proc_macro::cached;
 
 #[derive(QObject, Default)]
@@ -80,7 +81,24 @@ impl Launcher {
 
         // keycode 29 -> lctrl, 97 -> rctrl,  57 -> space
         let predicate = |state: [bool; 256]| (state[29] || state[97]) && state[57];
-        keyboard::listen(predicate, toggle_visibility);
+
+        let shortcuts = vec![
+            KeyboardShortcut::new(
+                vec![
+                    KeyMap::from(KeyMappingId::ControlLeft),
+                    KeyMap::from(KeyMappingId::Space),
+                ],
+                Box::new(toggle_visibility.clone()),
+            ),
+            KeyboardShortcut::new(
+                vec![
+                    KeyMap::from(KeyMappingId::ControlRight),
+                    KeyMap::from(KeyMappingId::Space),
+                ],
+                Box::new(toggle_visibility),
+            ),
+        ];
+        keyboard_listener::listen(shortcuts);
     }
 
     fn set_selected(&mut self, index: i32) {
