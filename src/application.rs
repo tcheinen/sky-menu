@@ -28,7 +28,7 @@ fn filter_exec(exec: String, icon: String, name: String, uri: String) -> String 
 }
 
 #[cached]
-fn parse_desktop_entry(filename: PathBuf) -> Application {
+pub fn parse_desktop_entry(filename: PathBuf) -> Application {
     let results = parse_entry(&fs::read_to_string(filename.as_path()).unwrap().into_bytes())
         .filter_map(|y| y.ok())
         .filter(|y| y.title == b"Desktop Entry")
