@@ -16,9 +16,22 @@ use std::path::{Path, PathBuf};
 use std::{env, fs};
 
 use crate::keyboard_listener::KeyboardShortcut;
+use crate::utility::get_running_applications;
 use cached::proc_macro::cached;
 use itertools::Itertools;
 use std::process::Command;
+
+#[derive(PartialEq, Eq)]
+enum ListType {
+    Launcher,
+    Switcher,
+}
+
+impl Default for ListType {
+    fn default() -> Self {
+        ListType::Launcher
+    }
+}
 
 #[derive(QObject, Default)]
 pub struct Launcher {
@@ -32,11 +45,14 @@ pub struct Launcher {
 
     usage_count: UsageCount,
 
+    list_type: ListType,
+
     setup: qt_method!(fn(&mut self)),
     up: qt_method!(fn(&mut self)),
     down: qt_method!(fn(&mut self)),
     launch: qt_method!(fn(&mut self)),
     hide: qt_method!(fn(&mut self)),
+    try_hide: qt_method!(fn(&mut self)),
     show: qt_method!(fn(&mut self)),
     search: qt_method!(fn(&mut self, query: String)),
     icon: qt_method!(fn(&mut self, icon: String) -> QUrl),
@@ -56,13 +72,45 @@ impl Launcher {
         self.focus = true;
         self.focus_changed();
 
-        let self_qpointer = QPointer::from(&*self);
+        let launcher_qpointer = QPointer::from(&*self);
+        let switcher_qpointer = QPointer::from(&*self);
+        let down_qpointer = QPointer::from(&*self);
+        let up_qpointer = QPointer::from(&*self);
         let toggle_visibility = qmetaobject::queued_callback(move |()| {
-            if let Some(qself) = self_qpointer.as_pinned() {
+            if let Some(qself) = launcher_qpointer.as_pinned() {
+                qself.borrow_mut().list_type = ListType::Launcher;
                 qself.borrow_mut().visible = !qself.borrow().visible;
                 qself.borrow().visible_changed();
                 qself.borrow_mut().focus = true;
                 qself.borrow().focus_changed();
+                qself.borrow_mut().search("".into())
+            }
+        });
+
+        let switcher = qmetaobject::queued_callback(move |()| {
+            if let Some(qself) = switcher_qpointer.as_pinned() {
+                qself.borrow_mut().list_type = ListType::Switcher;
+                qself.borrow_mut().visible = !qself.borrow().visible;
+                qself.borrow().visible_changed();
+                qself.borrow_mut().focus = true;
+                qself.borrow().focus_changed();
+                qself.borrow_mut().search("".into())
+            }
+        });
+
+        let down = qmetaobject::queued_callback(move |()| {
+            if let Some(qself) = down_qpointer.as_pinned() {
+                if qself.borrow().list_type == ListType::Switcher && qself.borrow().visible {
+                    qself.borrow_mut().down();
+                }
+            }
+        });
+
+        let up = qmetaobject::queued_callback(move |()| {
+            if let Some(qself) = up_qpointer.as_pinned() {
+                if qself.borrow().list_type == ListType::Switcher && qself.borrow().visible {
+                    qself.borrow_mut().up();
+                }
             }
         });
 
@@ -87,6 +135,21 @@ impl Launcher {
                 ],
                 Box::new(toggle_visibility),
             ),
+            KeyboardShortcut::new(
+                vec![
+                    KeyMap::from(KeyMappingId::AltLeft),
+                    KeyMap::from(KeyMappingId::Tab),
+                ],
+                Box::new(switcher),
+            ),
+            KeyboardShortcut::new(
+                vec![
+                    KeyMap::from(KeyMappingId::ShiftLeft),
+                    KeyMap::from(KeyMappingId::Tab),
+                ],
+                Box::new(up),
+            ),
+            KeyboardShortcut::new(vec![KeyMap::from(KeyMappingId::Tab)], Box::new(down)),
         ];
         keyboard_listener::listen(shortcuts);
     }
@@ -133,6 +196,12 @@ impl Launcher {
         self.visible_changed();
     }
 
+    fn try_hide(&mut self) {
+        if self.list_type == ListType::Launcher {
+            self.hide();
+        }
+    }
+
     fn show(&mut self) {
         self.visible = true;
         self.visible_changed();
@@ -158,10 +227,13 @@ impl Launcher {
     }
 
     fn get_app_list(&self) -> Vec<Application> {
-        generate_application_list()
-            .into_iter()
-            .map(|x| x.1)
-            .collect()
+        match self.list_type {
+            ListType::Launcher => generate_application_list()
+                .into_iter()
+                .map(|x| x.1)
+                .collect(),
+            ListType::Switcher => get_running_applications(),
+        }
     }
 
     fn icon(&mut self, name: String) -> QUrl {

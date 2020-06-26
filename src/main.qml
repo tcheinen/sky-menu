@@ -10,6 +10,7 @@ Window {
     height: config.height
     flags: Qt.Dialog | Qt.FramelessWindowHint
     color: "#00000000"
+    title: "Launcher"
 
     SystemPalette { id: palette; colorGroup: SystemPalette.Active }
 
@@ -30,7 +31,7 @@ Window {
 
     onActiveChanged: {
         if (!active) {
-            launcher.hide()
+            launcher.try_hide()
         }
     }
 

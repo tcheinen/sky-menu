@@ -1,3 +1,4 @@
+use crate::launcher::Application;
 use i3ipc::reply::Node;
 use i3ipc::I3Connection;
 use std::env;
@@ -26,7 +27,7 @@ fn workspace(node: &Node) -> Vec<Node> {
     node.nodes.iter().flat_map(workspace).collect::<Vec<Node>>()
 }
 
-pub fn get_running_applications() {
+pub fn get_running_applications() -> Vec<Application> {
     let mut conn = I3Connection::connect().expect("I3 IPC connection failed");
     let root = conn.get_tree().expect("couldn't get I3 tree");
     root.nodes[1]
@@ -37,5 +38,14 @@ pub fn get_running_applications() {
         .nodes
         .iter()
         .flat_map(workspace)
-        .for_each(|x| println!("{:#?}", x));
+        .map(|node| (node.name.unwrap_or("".into()), node.window.unwrap_or(0)))
+        .map(|(name, id)| {
+            Application::new(
+                name,
+                "".into(),
+                "".into(),
+                format!("i3-msg  [id={}] focus;i3-msg [title=Launcher] move workspace current; i3-msg [title=Launcher] focus;", id),
+            )
+        })
+        .collect()
 }
