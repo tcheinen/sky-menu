@@ -17,6 +17,7 @@ use std::{env, fs};
 
 use crate::keyboard_listener::KeyboardShortcut;
 use cached::proc_macro::cached;
+use itertools::Itertools;
 use std::process::Command;
 
 #[derive(QObject, Default)]
@@ -139,38 +140,29 @@ impl Launcher {
     }
     fn search(&mut self, query: String) {
         let matcher = SkimMatcherV2::default();
-        let mut list: Vec<(i64, String)> = generate_application_list()
-            .keys()
-            .map(|x| (matcher.fuzzy_match(x, &query), x))
-            .filter_map(|x| {
-                if x.0.is_some() {
-                    Some((x.0.unwrap(), x.1.to_string()))
-                } else {
-                    None
-                }
-            })
-            .map(|(weight, app)| {
-                (
-                    std::cmp::min(self.usage_count.get(&app) as i64 * 5, 50) + weight,
-                    app,
-                )
-            })
-            .collect();
-        list.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
         self.set(
-            list.iter()
-                .map(|x| {
-                    generate_application_list()
-                        .get(&x.1.to_string())
-                        .map_or(Application::default(), |x| x.clone())
+            self.get_app_list()
+                .into_iter()
+                .map(|x| (matcher.fuzzy_match(&x.name, &query).unwrap_or(0), x))
+                .map(|(weight, app)| {
+                    (
+                        std::cmp::min(self.usage_count.get(&app.name) as i64 * 5, 50) + weight,
+                        app,
+                    )
                 })
-                .map(|x| x.clone())
+                .sorted_by(|a, b| b.0.cmp(&a.0))
+                .map(|x| x.1)
                 .collect(),
         );
         self.set_selected(0);
     }
 
-    fn get_app_list(&self) -> Vec<Application> {}
+    fn get_app_list(&self) -> Vec<Application> {
+        generate_application_list()
+            .into_iter()
+            .map(|x| x.1)
+            .collect()
+    }
 
     fn icon(&mut self, name: String) -> QUrl {
         let path = lookup_icon(name).unwrap_or(
@@ -245,7 +237,7 @@ impl UsageCount {
     }
 }
 
-#[derive(Default, Debug, Clone, SimpleListItem, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, SimpleListItem, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Application {
     pub name: String,
     pub icon: String,
