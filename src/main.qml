@@ -48,12 +48,12 @@ Window {
             color: palette.window
             border.width: 0
             opacity: 0.5
-            height: launcher.height * (launcher.model_len + 1) * .1
-            width: launcher.width
+            height: config.height * (launcher.model_len + 1) * .1
+            width: config.width
         }
 
         Rectangle {
-            height: launcher.height * .1
+            height: config.height * .1
             color: palette.base
             anchors.left: parent.left
             anchors.right: parent.right
@@ -82,7 +82,7 @@ Window {
             anchors.bottom: parent.bottom
             anchors.right: parent.right
             anchors.left: parent.left
-            height: launcher.height * .9
+            height: config.height * .9
             currentIndex: launcher.selected
             highlightMoveDuration: 0
             model: launcher.model
@@ -91,15 +91,15 @@ Window {
             }
             delegate: Item {
                 id: listItem
-                height: launcher.height * 0.1
-                width: launcher.width
+                height: config.height * 0.1
+                width: config.width
                 Image {
-                    height: launcher.height * 0.1
-                    width: launcher.height * 0.1
+                    height: config.height * 0.1
+                    width: config.height * 0.1
                     source: launcher.icon(icon)
                 }
                 Text {
-                    leftPadding: launcher.height * 0.1
+                    leftPadding: config.height * 0.1
                     text: name
                     anchors.fill: parent
                     font.family: "Iosevka Aile"
