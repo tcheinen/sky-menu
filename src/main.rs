@@ -1,4 +1,5 @@
 mod application;
+mod config;
 mod error;
 mod icon;
 mod inotify_listener;
@@ -9,6 +10,7 @@ mod utility;
 use crate::launcher::*;
 use cstr::*;
 
+use crate::config::Config;
 use log::log;
 use qmetaobject::*;
 
@@ -19,6 +21,7 @@ fn main() {
     inotify_listener::listen();
 
     qml_register_type::<Launcher>(cstr!("Launcher"), 1, 0, cstr!("Launcher"));
+    qml_register_type::<Config>(cstr!("Config"), 1, 0, cstr!("Config"));
     let mut engine = QmlEngine::new();
     engine.load_data(include_str!("main.qml").into());
     engine.exec();

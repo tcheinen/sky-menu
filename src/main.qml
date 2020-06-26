@@ -2,11 +2,12 @@ import QtQuick 2.6
 import QtQuick.Window 2.2
 
 import Launcher 1.0
+import Config 1.0
 Window {
     id: window
     visible: launcher.visible
-    width: launcher.width
-    height: launcher.height
+    width: config.width
+    height: config.height
     flags: Qt.Dialog | Qt.FramelessWindowHint
     color: "#00000000"
 
@@ -14,6 +15,10 @@ Window {
 
     Launcher {
         id: launcher
+    }
+
+    Config {
+        id: config
     }
 
     onVisibleChanged: {

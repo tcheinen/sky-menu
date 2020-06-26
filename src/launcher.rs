@@ -24,8 +24,6 @@ pub struct Launcher {
 
     model: qt_property!(RefCell<SimpleListModel<Application>>; NOTIFY model_changed),
     visible: qt_property!(bool; NOTIFY visible_changed),
-    height: qt_property!(i32; NOTIFY settings_changed),
-    width: qt_property!(i32; NOTIFY settings_changed),
     selected: qt_property!(i32; NOTIFY selected_changed),
     focus: qt_property!(bool; NOTIFY focus_changed),
     model_len: qt_property!(i32; NOTIFY model_len_changed),
@@ -42,7 +40,6 @@ pub struct Launcher {
     icon: qt_method!(fn(&mut self, icon: String) -> QUrl),
 
     visible_changed: qt_signal!(),
-    settings_changed: qt_signal!(),
     model_changed: qt_signal!(),
     selected_changed: qt_signal!(),
     focus_changed: qt_signal!(),
@@ -57,11 +54,6 @@ impl Launcher {
         self.focus = true;
         self.focus_changed();
 
-        self.height = 500;
-        self.width = 400;
-
-        self.settings_changed();
-
         let self_qpointer = QPointer::from(&*self);
         let toggle_visibility = qmetaobject::queued_callback(move |()| {
             if let Some(qself) = self_qpointer.as_pinned() {
@@ -72,15 +64,11 @@ impl Launcher {
             }
         });
 
-        let mut data_dir = get_data_dir();
-        data_dir.push("usage.json");
+        let mut data_dir = get_data_dir().join("usage.json");
 
         self.usage_count = UsageCount::from(data_dir);
 
         self.search("".into());
-
-        // keycode 29 -> lctrl, 97 -> rctrl,  57 -> space
-        let predicate = |state: [bool; 256]| (state[29] || state[97]) && state[57];
 
         let shortcuts = vec![
             KeyboardShortcut::new(
