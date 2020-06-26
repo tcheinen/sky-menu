@@ -17,6 +17,7 @@ use std::{env, fs};
 
 use crate::keyboard_listener::KeyboardShortcut;
 use cached::proc_macro::cached;
+use std::process::Command;
 
 #[derive(QObject, Default)]
 pub struct Launcher {
@@ -91,6 +92,8 @@ impl Launcher {
 
     fn set_selected(&mut self, index: i32) {
         self.selected = index;
+        let app = self.model.borrow()[self.selected as usize].clone();
+        app.try_select();
         self.selected_changed();
     }
 
@@ -118,16 +121,9 @@ impl Launcher {
 
         let app = self.model.borrow()[self.selected as usize].clone();
 
-        if let Err(e) = Command::new("sh")
-            .arg("-c")
-            .arg(app.exec.clone())
-            .arg("&")
-            .arg("disown")
-            .spawn()
-        {
-            error!("Couldn't launch program: {}", e);
-        }
-        self.usage_count.inc(&app.name);
+        if app.try_exec() {
+            self.usage_count.inc(&app.name)
+        };
         self.hide();
     }
 
@@ -173,6 +169,8 @@ impl Launcher {
         );
         self.set_selected(0);
     }
+
+    fn get_app_list(&self) -> Vec<Application> {}
 
     fn icon(&mut self, name: String) -> QUrl {
         let path = lookup_icon(name).unwrap_or(
@@ -252,10 +250,43 @@ pub struct Application {
     pub name: String,
     pub icon: String,
     pub exec: String,
+    pub select: String,
 }
 
 impl Application {
-    pub fn new(name: String, icon: String, exec: String) -> Self {
-        Application { name, icon, exec }
+    pub fn new(name: String, icon: String, exec: String, select: String) -> Self {
+        Application {
+            name,
+            icon,
+            exec,
+            select,
+        }
+    }
+
+    pub fn try_exec(&self) -> bool {
+        if self.exec == "" {
+            return false;
+        }
+        let cmd = self.exec.clone();
+        Application::exec_string(cmd)
+    }
+
+    pub fn try_select(&self) -> bool {
+        let cmd = self.select.clone();
+        Application::exec_string(cmd)
+    }
+
+    fn exec_string(cmd: String) -> bool {
+        if let Err(e) = Command::new("sh")
+            .arg("-c")
+            .arg(cmd)
+            .arg("&")
+            .arg("disown")
+            .spawn()
+        {
+            error!("Couldn't launch program: {}", e);
+            return false;
+        }
+        true
     }
 }

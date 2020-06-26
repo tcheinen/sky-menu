@@ -65,7 +65,7 @@ pub fn parse_desktop_entry(filename: PathBuf) -> Application {
                 name.clone(),
                 filename.to_string_lossy().into(),
             );
-            Application::new(name, icon, exec)
+            Application::new(name, icon, exec, "".into())
         })
         .next();
     results.unwrap_or(Application::default())
@@ -131,19 +131,6 @@ mod tests {
                 "/usr/share/applications/firefox.desktop".into()
             ),
             "/usr/share/applications/firefox.desktop"
-        );
-    }
-
-    // #[test]
-    /// relies on firefox being installed
-    fn it_parses_apps() {
-        assert_eq!(
-            parse_desktop_entry(PathBuf::from("/usr/share/applications/firefox.desktop")),
-            Application {
-                name: "Firefox".into(),
-                icon: "firefox".into(),
-                exec: "/usr/lib/firefox/firefox ".into()
-            }
         );
     }
 
