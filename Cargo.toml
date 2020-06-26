@@ -20,3 +20,4 @@ serde = { version = "1.0.112", features = ["derive"] }
 serde_json = "1.0"
 inotify = "0.8.3"
 keycode = "0.3.0"
+i3ipc = "0.10.1"
