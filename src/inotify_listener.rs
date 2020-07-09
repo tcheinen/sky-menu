@@ -1,5 +1,5 @@
 use crate::application::generate_application_list;
-use crate::utility::{get_xdg_application_dirs};
+use crate::utility::get_xdg_application_dirs;
 use cached::Cached;
 use inotify::{EventMask, Inotify, WatchMask};
 use std::path::Path;

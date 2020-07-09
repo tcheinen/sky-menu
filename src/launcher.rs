@@ -21,8 +21,6 @@ use cached::proc_macro::cached;
 use itertools::Itertools;
 use std::process::Command;
 
-
-
 #[derive(PartialEq, Eq)]
 enum ListType {
     Launcher,
@@ -110,7 +108,6 @@ impl Launcher {
             }
         });
 
-
         let mut data_dir = get_data_dir().join("usage.json");
 
         self.usage_count = UsageCount::from(data_dir);
@@ -124,13 +121,10 @@ impl Launcher {
 
         let shortcuts = vec![
             KeyboardShortcut::new(
-                |key, x|  x[LCTRL_KEY_CODE] && x[SPACE_KEY_CODE],
+                |key, x| x[LCTRL_KEY_CODE] && x[SPACE_KEY_CODE],
                 toggle_launcher.clone(),
             ),
-            KeyboardShortcut::new(
-                |key, x| x[LALT_KEY_CODE] && x[TAB_KEY_CODE],
-                show_switcher,
-            ),
+            KeyboardShortcut::new(|key, x| x[LALT_KEY_CODE] && x[TAB_KEY_CODE], show_switcher),
             KeyboardShortcut::new(
                 |key, x| key as usize == LALT_KEY_CODE && !x[LALT_KEY_CODE],
                 hide_switcher,
