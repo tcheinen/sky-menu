@@ -21,6 +21,8 @@ use cached::proc_macro::cached;
 use itertools::Itertools;
 use std::process::Command;
 
+
+
 #[derive(PartialEq, Eq)]
 enum ListType {
     Launcher,
@@ -52,7 +54,7 @@ pub struct Launcher {
     down: qt_method!(fn(&mut self)),
     launch: qt_method!(fn(&mut self)),
     hide: qt_method!(fn(&mut self)),
-    try_hide: qt_method!(fn(&mut self)),
+    hide_if_launcher: qt_method!(fn(&mut self)),
     show: qt_method!(fn(&mut self)),
     search: qt_method!(fn(&mut self, query: String)),
     icon: qt_method!(fn(&mut self, icon: String) -> QUrl),
@@ -73,10 +75,7 @@ impl Launcher {
         self.focus_changed();
 
         let launcher_qpointer = QPointer::from(&*self);
-        let switcher_qpointer = QPointer::from(&*self);
-        let down_qpointer = QPointer::from(&*self);
-        let up_qpointer = QPointer::from(&*self);
-        let toggle_visibility = qmetaobject::queued_callback(move |()| {
+        let toggle_launcher = qmetaobject::queued_callback(move |()| {
             if let Some(qself) = launcher_qpointer.as_pinned() {
                 qself.borrow_mut().list_type = ListType::Launcher;
                 qself.borrow_mut().visible = !qself.borrow().visible;
@@ -87,10 +86,14 @@ impl Launcher {
             }
         });
 
-        let switcher = qmetaobject::queued_callback(move |()| {
+        let switcher_qpointer = QPointer::from(&*self);
+        let show_switcher = qmetaobject::queued_callback(move |()| {
             if let Some(qself) = switcher_qpointer.as_pinned() {
+                if qself.borrow().visible {
+                    return;
+                }
                 qself.borrow_mut().list_type = ListType::Switcher;
-                qself.borrow_mut().visible = !qself.borrow().visible;
+                qself.borrow_mut().visible = true;
                 qself.borrow().visible_changed();
                 qself.borrow_mut().focus = true;
                 qself.borrow().focus_changed();
@@ -98,21 +101,15 @@ impl Launcher {
             }
         });
 
-        let down = qmetaobject::queued_callback(move |()| {
-            if let Some(qself) = down_qpointer.as_pinned() {
-                if qself.borrow().list_type == ListType::Switcher && qself.borrow().visible {
-                    qself.borrow_mut().down();
-                }
+        let hide_switcher_qpointer = QPointer::from(&*self);
+        let hide_switcher = qmetaobject::queued_callback(move |()| {
+            if let Some(qself) = hide_switcher_qpointer.as_pinned() {
+                qself.borrow_mut().list_type = ListType::Switcher;
+                qself.borrow_mut().visible = false;
+                qself.borrow().visible_changed();
             }
         });
 
-        let up = qmetaobject::queued_callback(move |()| {
-            if let Some(qself) = up_qpointer.as_pinned() {
-                if qself.borrow().list_type == ListType::Switcher && qself.borrow().visible {
-                    qself.borrow_mut().up();
-                }
-            }
-        });
 
         let mut data_dir = get_data_dir().join("usage.json");
 
@@ -120,36 +117,24 @@ impl Launcher {
 
         self.search("".into());
 
+        const SPACE_KEY_CODE: usize = 57;
+        const TAB_KEY_CODE: usize = 15;
+        const LCTRL_KEY_CODE: usize = 29;
+        const LALT_KEY_CODE: usize = 56;
+
         let shortcuts = vec![
             KeyboardShortcut::new(
-                vec![
-                    KeyMap::from(KeyMappingId::ControlLeft),
-                    KeyMap::from(KeyMappingId::Space),
-                ],
-                Box::new(toggle_visibility.clone()),
+                |key, x|  x[LCTRL_KEY_CODE] && x[SPACE_KEY_CODE],
+                toggle_launcher.clone(),
             ),
             KeyboardShortcut::new(
-                vec![
-                    KeyMap::from(KeyMappingId::ControlRight),
-                    KeyMap::from(KeyMappingId::Space),
-                ],
-                Box::new(toggle_visibility),
+                |key, x| x[LALT_KEY_CODE] && x[TAB_KEY_CODE],
+                show_switcher,
             ),
             KeyboardShortcut::new(
-                vec![
-                    KeyMap::from(KeyMappingId::AltLeft),
-                    KeyMap::from(KeyMappingId::Tab),
-                ],
-                Box::new(switcher),
+                |key, x| key as usize == LALT_KEY_CODE && !x[LALT_KEY_CODE],
+                hide_switcher,
             ),
-            KeyboardShortcut::new(
-                vec![
-                    KeyMap::from(KeyMappingId::ShiftLeft),
-                    KeyMap::from(KeyMappingId::Tab),
-                ],
-                Box::new(up),
-            ),
-            KeyboardShortcut::new(vec![KeyMap::from(KeyMappingId::Tab)], Box::new(down)),
         ];
         keyboard_listener::listen(shortcuts);
     }
@@ -196,7 +181,7 @@ impl Launcher {
         self.visible_changed();
     }
 
-    fn try_hide(&mut self) {
+    fn hide_if_launcher(&mut self) {
         if self.list_type == ListType::Launcher {
             self.hide();
         }

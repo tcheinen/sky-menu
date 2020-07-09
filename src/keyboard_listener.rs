@@ -14,18 +14,20 @@ use libc::{O_RDONLY, O_RDWR, O_WRONLY};
 use std::borrow::Borrow;
 use std::os::unix::fs::OpenOptionsExt;
 
+
+
 pub struct KeyboardShortcut {
-    predicate: Vec<KeyMap>,
+    predicate: Box<Fn(u8, [bool;256]) -> bool + Send + Sync + 'static>,
     executor: Box<Fn(()) + Send + Sync + 'static>,
 }
 impl KeyboardShortcut {
     pub fn new(
-        predicate: Vec<KeyMap>,
-        executor: Box<impl Fn(()) + Send + Sync + Clone + 'static>,
+        predicate: impl Fn(u8, [bool;256]) -> bool + Send + Sync + Clone + 'static,
+        executor: impl Fn(()) + Send + Sync + Clone + 'static,
     ) -> Self {
         KeyboardShortcut {
-            predicate,
-            executor,
+            predicate: Box::new(predicate),
+            executor: Box::new(executor),
         }
     }
 }
@@ -45,7 +47,8 @@ pub fn listen(shortcuts: Vec<KeyboardShortcut>) {
                         KeyState::Released => false,
                     };
                     shortcuts.iter().for_each(|x| {
-                        if x.predicate.iter().all(|y| state[y.evdev as usize]) {
+                        let predicate: &(dyn Fn(u8, [bool;256]) -> bool + Send + Sync + 'static) =  x.predicate.borrow();
+                        if predicate(key as u8, state) {
                             let exec: &(dyn Fn(()) + Send + Sync + 'static) = x.executor.borrow();
                             exec(());
                         }

@@ -18,6 +18,23 @@ Window {
         id: launcher
     }
 
+    Shortcut {
+        sequence: "Tab"
+        onActivated: launcher.down()
+    }
+    Shortcut {
+        sequence: "Alt+Tab"
+        onActivated: launcher.down()
+    }
+    Shortcut {
+        sequence: ["Shift+Tab", "Alt+Shift+Tab"]
+        onActivated: launcher.up()
+    }
+    Shortcut {
+        sequence: "Alt+Shift+Tab"
+        onActivated: launcher.up()
+    }
+
     Config {
         id: config
     }
@@ -31,7 +48,7 @@ Window {
 
     onActiveChanged: {
         if (!active) {
-            launcher.try_hide()
+            launcher.hide_if_launcher()
         }
     }
 
