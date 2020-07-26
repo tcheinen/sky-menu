@@ -157,7 +157,6 @@ impl Launcher {
     }
 
     fn launch(&mut self) {
-        
         if self.model.borrow().row_count() == 0 {
             return;
         }
@@ -279,12 +278,15 @@ impl UsageCount {
                 return;
             }
         };
-        let mut out_loc = get_data_dir();
 
-        // TODO handle errors here aka ignore them and warn in console
-        fs::create_dir_all(out_loc.as_path());
+        let mut out_loc = get_data_dir();
+        if let Err(e) = fs::create_dir_all(out_loc.as_path()) {
+            error!("Creating config directory failed: {}", e)
+        }
         out_loc.push(Path::new("usage.json"));
-        fs::write(out_loc.as_path(), json);
+        if let Err(e) = fs::write(out_loc.as_path(), json) {
+            error!("Writing usage data failed: {}", e)
+        }
     }
 }
 
