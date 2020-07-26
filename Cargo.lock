@@ -641,29 +641,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "launcher"
-version = "0.1.0"
-dependencies = [
- "cached",
- "cstr",
- "env_logger",
- "freedesktop_entry_parser",
- "fuzzy-matcher",
- "i3ipc",
- "inotify",
- "input",
- "itertools",
- "keycode",
- "libc",
- "linicon",
- "log",
- "qmetaobject",
- "rust-ini",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1105,6 +1082,29 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "sky-menu"
+version = "0.1.0"
+dependencies = [
+ "cached",
+ "cstr",
+ "env_logger",
+ "freedesktop_entry_parser",
+ "fuzzy-matcher",
+ "i3ipc",
+ "inotify",
+ "input",
+ "itertools",
+ "keycode",
+ "libc",
+ "linicon",
+ "log",
+ "qmetaobject",
+ "rust-ini",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

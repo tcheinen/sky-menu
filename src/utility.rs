@@ -37,7 +37,7 @@ pub fn get_running_applications() -> Vec<Application> {
 
     root.nodes[1..]
         .iter()
-        .flat_map(|x| {println!("hi");x.nodes.clone()})
+        .flat_map(|x| {x.nodes.clone()})
         .filter(|x| x.name == Some("content".into()))
         .flat_map(|x| x.nodes.into_iter())
         .flat_map(workspace)
