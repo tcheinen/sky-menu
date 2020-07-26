@@ -1,5 +1,9 @@
 use qmetaobject::*;
 
+pub static QUALIFIER: &str = "com.teddyheinen";
+pub static ORGANIZATION: &str = "Teddy Heinen";
+pub static APPLICATION: &str = "sky-menu";
+
 #[derive(QObject, Default)]
 pub struct Config {
     base: qt_base_class!(trait QObject),

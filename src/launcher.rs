@@ -1,4 +1,4 @@
-use crate::keyboard_listener;
+use crate::{config, keyboard_listener};
 
 use crate::application::generate_application_list;
 use crate::icon::lookup_icon;
@@ -18,6 +18,7 @@ use std::{env, fs};
 use crate::keyboard_listener::KeyboardShortcut;
 use crate::utility::get_running_applications;
 use cached::proc_macro::cached;
+use directories::ProjectDirs;
 use itertools::Itertools;
 use std::process::Command;
 
@@ -107,10 +108,11 @@ impl Launcher {
                 qself.borrow().visible_changed();
             }
         });
-
-        let data_dir = get_data_dir().join("usage.json");
-
-        self.usage_count = UsageCount::from(data_dir);
+        if let Some(proj_dirs) =
+            ProjectDirs::from(config::QUALIFIER, config::ORGANIZATION, config::APPLICATION)
+        {
+            self.usage_count = UsageCount::from(proj_dirs.data_dir().join("usage.json"))
+        }
 
         self.search("".into());
 
@@ -231,22 +233,6 @@ impl Launcher {
     }
 }
 
-#[cached]
-fn get_data_dir() -> PathBuf {
-    match env::var("XDG_DATA_HOME") {
-        Ok(x) => PathBuf::from(x),
-        Err(_) => match env::var("HOME") {
-            Ok(x) => Path::new(&x).join(Path::new(".local/share")),
-            Err(_) => {
-                warn!("Couldn't resolve $XDG_DATA_HOME or $HOME, using cwd for usage database");
-                PathBuf::from(".")
-            }
-        },
-    }
-    .join(Path::new("launcher"))
-    .to_path_buf()
-}
-
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct UsageCount {
     store: HashMap<String, i32>,
@@ -279,13 +265,15 @@ impl UsageCount {
             }
         };
 
-        let mut out_loc = get_data_dir();
-        if let Err(e) = fs::create_dir_all(out_loc.as_path()) {
-            error!("Creating config directory failed: {}", e)
-        }
-        out_loc.push(Path::new("usage.json"));
-        if let Err(e) = fs::write(out_loc.as_path(), json) {
-            error!("Writing usage data failed: {}", e)
+        if let Some(proj_dirs) =
+            ProjectDirs::from(config::QUALIFIER, config::ORGANIZATION, config::APPLICATION)
+        {
+            if let Err(e) = fs::create_dir_all(proj_dirs.data_dir()) {
+                error!("Creating config directory failed: {}", e)
+            }
+            if let Err(e) = fs::write(proj_dirs.data_dir().join("usage.json"), json) {
+                error!("Writing usage data failed: {}", e)
+            }
         }
     }
 }
