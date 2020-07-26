@@ -1,6 +1,6 @@
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
 use input::{Libinput, LibinputInterface};
-use keycode::{KeyMap, KeyMappingId};
+
 use std::fs::{File, OpenOptions};
 use std::os::unix::io::{FromRawFd, IntoRawFd, RawFd};
 use std::path::Path;
@@ -15,8 +15,8 @@ use std::borrow::Borrow;
 use std::os::unix::fs::OpenOptionsExt;
 
 pub struct KeyboardShortcut {
-    predicate: Box<Fn(u8, [bool; 256]) -> bool + Send + Sync + 'static>,
-    executor: Box<Fn(()) + Send + Sync + 'static>,
+    predicate: Box<dyn Fn(u8, [bool; 256]) -> bool + Send + Sync + 'static>,
+    executor: Box<dyn Fn(()) + Send + Sync + 'static>,
 }
 impl KeyboardShortcut {
     pub fn new(

@@ -4,7 +4,7 @@ use crate::application::generate_application_list;
 use crate::icon::lookup_icon;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
-use keycode::{KeyMap, KeyMappingId};
+
 use qmetaobject::*;
 use std::cell::RefCell;
 
@@ -108,7 +108,7 @@ impl Launcher {
             }
         });
 
-        let mut data_dir = get_data_dir().join("usage.json");
+        let data_dir = get_data_dir().join("usage.json");
 
         self.usage_count = UsageCount::from(data_dir);
 
@@ -121,10 +121,10 @@ impl Launcher {
 
         let shortcuts = vec![
             KeyboardShortcut::new(
-                |key, x| x[LCTRL_KEY_CODE] && x[SPACE_KEY_CODE],
+                |_key, x| x[LCTRL_KEY_CODE] && x[SPACE_KEY_CODE],
                 toggle_launcher.clone(),
             ),
-            KeyboardShortcut::new(|key, x| x[LALT_KEY_CODE] && x[TAB_KEY_CODE], show_switcher),
+            KeyboardShortcut::new(|_key, x| x[LALT_KEY_CODE] && x[TAB_KEY_CODE], show_switcher),
             KeyboardShortcut::new(
                 |key, x| key as usize == LALT_KEY_CODE && !x[LALT_KEY_CODE],
                 hide_switcher,
@@ -157,7 +157,7 @@ impl Launcher {
     }
 
     fn launch(&mut self) {
-        use std::process::Command;
+        
         if self.model.borrow().row_count() == 0 {
             return;
         }

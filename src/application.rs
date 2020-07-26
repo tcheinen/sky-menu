@@ -1,10 +1,10 @@
 use freedesktop_entry_parser::parse_entry;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 
 use std::collections::HashMap;
 
 use crate::launcher::Application;
-use crate::utility::{get_xdg_application_dirs, get_xdg_data_dirs};
+use crate::utility::{get_xdg_application_dirs};
 use cached::proc_macro::cached;
 use std::fs;
 
@@ -88,9 +88,9 @@ pub fn generate_application_list() -> HashMap<String, Application> {
 
 #[cfg(test)]
 mod tests {
-    use crate::application::{filter_exec, generate_application_list, parse_desktop_entry};
-    use crate::launcher::Application;
-    use std::path::PathBuf;
+    use crate::application::{filter_exec, generate_application_list};
+    
+    
 
     #[test]
     fn it_filters_exec() {
