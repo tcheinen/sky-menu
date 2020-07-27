@@ -1,7 +1,7 @@
 import QtQuick 2.6
 import QtQuick.Window 2.2
 
-import Launcher 1.0
+import SearchableList 1.0
 import Config 1.0
 Window {
     id: window
@@ -14,7 +14,7 @@ Window {
 
     SystemPalette { id: palette; colorGroup: SystemPalette.Active }
 
-    Launcher {
+    SearchableList {
         id: launcher
     }
 
@@ -47,8 +47,8 @@ Window {
     }
 
     onActiveChanged: {
-        if (!active) {
-            launcher.hide_if_launcher()
+        if (!active && launcher.hide_on_lost_focus) {
+            launcher.hide()
         }
     }
 

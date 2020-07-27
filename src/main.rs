@@ -4,10 +4,10 @@ mod error;
 mod icon;
 mod inotify_listener;
 mod keyboard_listener;
-mod launcher;
+mod searchable_list;
 mod utility;
 
-use crate::launcher::*;
+use crate::searchable_list::*;
 use cstr::*;
 
 use crate::config::Config;
@@ -20,7 +20,7 @@ fn main() {
 
     inotify_listener::listen();
 
-    qml_register_type::<Launcher>(cstr!("Launcher"), 1, 0, cstr!("Launcher"));
+    qml_register_type::<SearchableList>(cstr!("SearchableList"), 1, 0, cstr!("SearchableList"));
     qml_register_type::<Config>(cstr!("Config"), 1, 0, cstr!("Config"));
     let mut engine = QmlEngine::new();
     engine.load_data(include_str!("main.qml").into());

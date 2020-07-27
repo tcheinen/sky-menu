@@ -1,4 +1,4 @@
-use crate::launcher::Application;
+use crate::searchable_list::Application;
 use i3ipc::reply::{Node, WindowProperty};
 use i3ipc::I3Connection;
 use std::collections::HashMap;

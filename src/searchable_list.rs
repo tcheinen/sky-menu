@@ -1,25 +1,17 @@
-use crate::{config, keyboard_listener};
-
 use crate::application::generate_application_list;
+use crate::config;
+use crate::config::UsageCount;
 use crate::icon::lookup_icon;
-use fuzzy_matcher::skim::SkimMatcherV2;
-use fuzzy_matcher::FuzzyMatcher;
-
-use qmetaobject::*;
-use std::cell::RefCell;
-
-use log::{error, warn};
-use std::collections::HashMap;
-
-use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
-use std::{env, fs};
-
+use crate::keyboard_listener;
 use crate::keyboard_listener::KeyboardShortcut;
 use crate::utility::get_running_applications;
-use cached::proc_macro::cached;
 use directories::ProjectDirs;
+use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
 use itertools::Itertools;
+use log::{error, warn};
+use qmetaobject::*;
+use std::cell::RefCell;
 use std::process::Command;
 
 #[derive(PartialEq, Eq)]
@@ -35,7 +27,7 @@ impl Default for ListType {
 }
 
 #[derive(QObject, Default)]
-pub struct Launcher {
+pub struct SearchableList {
     base: qt_base_class!(trait QObject),
 
     model: qt_property!(RefCell<SimpleListModel<Application>>; NOTIFY model_changed),
@@ -43,6 +35,7 @@ pub struct Launcher {
     selected: qt_property!(i32; NOTIFY selected_changed),
     focus: qt_property!(bool; NOTIFY focus_changed),
     model_len: qt_property!(i32; NOTIFY model_len_changed),
+    hide_on_lost_focus: qt_property!(bool;),
 
     usage_count: UsageCount,
 
@@ -53,7 +46,6 @@ pub struct Launcher {
     down: qt_method!(fn(&mut self)),
     launch: qt_method!(fn(&mut self)),
     hide: qt_method!(fn(&mut self)),
-    hide_if_launcher: qt_method!(fn(&mut self)),
     show: qt_method!(fn(&mut self)),
     search: qt_method!(fn(&mut self, query: String)),
     icon: qt_method!(fn(&mut self, icon: String) -> QUrl),
@@ -65,7 +57,7 @@ pub struct Launcher {
     model_len_changed: qt_signal!(),
 }
 
-impl Launcher {
+impl SearchableList {
     fn setup(&mut self) {
         self.visible = false;
         self.visible_changed();
@@ -77,6 +69,7 @@ impl Launcher {
         let toggle_launcher = qmetaobject::queued_callback(move |()| {
             if let Some(qself) = launcher_qpointer.as_pinned() {
                 qself.borrow_mut().list_type = ListType::Launcher;
+                qself.borrow_mut().hide_on_lost_focus = true;
                 qself.borrow_mut().visible = !qself.borrow().visible;
                 qself.borrow().visible_changed();
                 qself.borrow_mut().focus = true;
@@ -91,6 +84,7 @@ impl Launcher {
                 if qself.borrow().visible {
                     return;
                 }
+                qself.borrow_mut().hide_on_lost_focus = false;
                 qself.borrow_mut().list_type = ListType::Switcher;
                 qself.borrow_mut().visible = true;
                 qself.borrow().visible_changed();
@@ -176,12 +170,6 @@ impl Launcher {
         self.visible_changed();
     }
 
-    fn hide_if_launcher(&mut self) {
-        if self.list_type == ListType::Launcher {
-            self.hide();
-        }
-    }
-
     fn show(&mut self) {
         self.visible = true;
         self.visible_changed();
@@ -230,51 +218,6 @@ impl Launcher {
         self.model_len = self.model.borrow().row_count();
         self.model_changed();
         self.model_len_changed();
-    }
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct UsageCount {
-    store: HashMap<String, i32>,
-}
-
-impl From<PathBuf> for UsageCount {
-    fn from(x: PathBuf) -> Self {
-        let json = fs::read_to_string(&x).unwrap_or("{}".to_string());
-        UsageCount {
-            store: serde_json::from_str(&json).unwrap_or(HashMap::new()),
-        }
-    }
-}
-
-impl UsageCount {
-    pub fn inc(&mut self, app: &str) {
-        self.set(app, self.get(app) + 1)
-    }
-    pub fn get(&self, app: &str) -> i32 {
-        self.store.get(app).unwrap_or(&0).clone()
-    }
-
-    pub fn set(&mut self, app: &str, val: i32) {
-        self.store.insert(app.to_string(), val);
-        let json = match serde_json::to_string(&self.store) {
-            Ok(x) => x,
-            Err(e) => {
-                warn!("Couldn't serialize usage database to json: {}", e);
-                return;
-            }
-        };
-
-        if let Some(proj_dirs) =
-            ProjectDirs::from(config::QUALIFIER, config::ORGANIZATION, config::APPLICATION)
-        {
-            if let Err(e) = fs::create_dir_all(proj_dirs.data_dir()) {
-                error!("Creating config directory failed: {}", e)
-            }
-            if let Err(e) = fs::write(proj_dirs.data_dir().join("usage.json"), json) {
-                error!("Writing usage data failed: {}", e)
-            }
-        }
     }
 }
 
