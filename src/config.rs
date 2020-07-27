@@ -1,27 +1,27 @@
-use crate::{config, keyboard_listener};
+use crate::{config};
 use qmetaobject::*;
 
-use crate::application::generate_application_list;
-use crate::icon::lookup_icon;
-use fuzzy_matcher::skim::SkimMatcherV2;
-use fuzzy_matcher::FuzzyMatcher;
 
-use qmetaobject::*;
-use std::cell::RefCell;
+
+
+
+
+
+
 
 use log::{error, warn};
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
-use std::{env, fs};
+use std::path::{PathBuf};
+use std::{fs};
 
-use crate::keyboard_listener::KeyboardShortcut;
-use crate::utility::get_running_applications;
-use cached::proc_macro::cached;
+
+
+
 use directories::ProjectDirs;
 use itertools::Itertools;
-use std::process::Command;
+
 
 pub static QUALIFIER: &str = "com.teddyheinen";
 pub static ORGANIZATION: &str = "Teddy Heinen";

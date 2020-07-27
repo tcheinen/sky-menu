@@ -9,7 +9,7 @@ use directories::ProjectDirs;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use itertools::Itertools;
-use log::{error, warn};
+use log::{error};
 use qmetaobject::*;
 use std::cell::RefCell;
 use std::process::Command;
