@@ -3,10 +3,59 @@ use std::path::PathBuf;
 
 use std::collections::HashMap;
 
-use crate::searchable_list::Application;
 use crate::utility::get_xdg_application_dirs;
 use cached::proc_macro::cached;
 use std::fs;
+use std::process::Command;
+use log::{error};
+
+
+#[derive(Default, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct Entry {
+    pub name: String,
+    pub icon: String,
+    pub exec: String,
+    pub select: String,
+}
+
+impl Entry {
+    pub fn new(name: String, icon: String, exec: String, select: String) -> Self {
+        Entry {
+            name,
+            icon,
+            exec,
+            select,
+        }
+    }
+
+    pub fn try_exec(&self) -> bool {
+        if self.exec == "" {
+            return false;
+        }
+        let cmd = self.exec.clone();
+        Entry::exec_string(cmd)
+    }
+
+    pub fn try_select(&self) -> bool {
+        let cmd = self.select.clone();
+        Entry::exec_string(cmd)
+    }
+
+    fn exec_string(cmd: String) -> bool {
+        if let Err(e) = Command::new("sh")
+            .arg("-c")
+            .arg(cmd)
+            .arg("&")
+            .arg("disown")
+            .spawn()
+        {
+            error!("Couldn't launch program: {}", e);
+            return false;
+        }
+        true
+    }
+}
+
 
 /// replace the format specifiers - most get replaced with nothing because they're for parameters or deprecated
 /// %i is replaced with the Icon key, %c is replaced with the name, %k is replaced with the URI
@@ -28,7 +77,7 @@ fn filter_exec(exec: String, icon: String, name: String, uri: String) -> String 
 }
 
 #[cached]
-pub fn parse_desktop_entry(filename: PathBuf) -> Application {
+pub fn parse_desktop_entry(filename: PathBuf) -> Entry {
     let results = parse_entry(&fs::read_to_string(filename.as_path()).unwrap().into_bytes())
         .filter_map(|y| y.ok())
         .filter(|y| y.title == b"Desktop Entry")
@@ -65,14 +114,14 @@ pub fn parse_desktop_entry(filename: PathBuf) -> Application {
                 name.clone(),
                 filename.to_string_lossy().into(),
             );
-            Application::new(name, icon, exec, "".into())
+            Entry::new(name, icon, exec, "".into())
         })
         .next();
-    results.unwrap_or(Application::default())
+    results.unwrap_or(Entry::default())
 }
 
 #[cached]
-pub fn generate_application_list() -> HashMap<String, Application> {
+pub fn generate_application_list() -> HashMap<String, Entry> {
     get_xdg_application_dirs()
         .filter(|x| x.exists())
         .flat_map(|path| {
@@ -83,7 +132,7 @@ pub fn generate_application_list() -> HashMap<String, Application> {
                 .map(|x| (x.name.clone(), x))
                 .filter(|x| &x.1.name != "")
         })
-        .collect::<HashMap<String, Application>>()
+        .collect::<HashMap<String, Entry>>()
 }
 
 #[cfg(test)]

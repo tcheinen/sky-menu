@@ -1,4 +1,4 @@
-use crate::searchable_list::Application;
+use crate::application::Entry;
 use i3ipc::reply::{Node, WindowProperty};
 use i3ipc::I3Connection;
 use std::collections::HashMap;
@@ -31,7 +31,7 @@ fn workspace(node: Node) -> Vec<Node> {
         .collect::<Vec<Node>>()
 }
 
-pub fn get_running_applications() -> Vec<Application> {
+pub fn get_running_applications() -> Vec<Entry> {
     let mut conn = I3Connection::connect().expect("I3 IPC connection failed");
     let root = conn.get_tree().expect("couldn't get I3 tree");
 
@@ -50,7 +50,7 @@ pub fn get_running_applications() -> Vec<Application> {
                 .unwrap_or(&"".to_string())
                 .clone()))
         .map(|(name, id, icon)| {
-            Application::new(
+            Entry::new(
                 name,
                 icon,
                 "".into(),
