@@ -21,6 +21,7 @@ use nix::unistd::{fork, ForkResult};
 use signal_hook::consts::SIGCHLD;
 use signal_hook::iterator::SignalsInfo;
 use std::os::unix::process::CommandExt;
+use std::process::Stdio;
 
 pub fn main() -> iced::Result {
 
@@ -125,7 +126,13 @@ impl Application for Launcher {
             },
             Message::Launch => {
                 let entry = self.items[self.selected].clone();
-                let popen = subprocess::Exec::cmd(entry.exec).detached().popen();
+                info!("launching program: {:?}", entry);
+                std::process::Command::new(entry.exec)
+                    .stdin(Stdio::null())
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .spawn();
+
             }
         };
         Command::none()
