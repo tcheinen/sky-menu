@@ -74,6 +74,8 @@ fn filter_exec(exec: String, icon: String, name: String, uri: String) -> String 
         .replace("%i", &icon)
         .replace("%c", &name)
         .replace("%k", &uri)
+        .trim_end() // parsing seems to sometimes give extra spaces on the end
+        .to_string()
 }
 
 #[cached]

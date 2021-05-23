@@ -13,10 +13,40 @@ use iced::{
     Command, Container, Element, HorizontalAlignment, Length, Sandbox, Settings, Subscription,
     Text, TextInput,
 };
+use signal_hook::iterator::exfiltrator::WithOrigin;
 use iced_native::{event, subscription, Event};
 use itertools::Itertools;
-use log::info;
+use log::{error, info};
+use nix::unistd::{fork, ForkResult};
+use signal_hook::consts::SIGCHLD;
+use signal_hook::iterator::SignalsInfo;
+use std::os::unix::process::CommandExt;
+
 pub fn main() -> iced::Result {
+
+    // SIGCHLD is signalled whenever a child process terminates
+    // lets go ahead and wait them so they don't become defunct
+    std::thread::spawn(|| {
+        use nix::sys::wait::{waitpid, WaitPidFlag};
+        use nix::unistd::Pid;
+        let mut signals = SignalsInfo::<WithOrigin>::new(&[SIGCHLD]).expect("signal hook couldn't be installed");
+        for info in &mut signals {
+            match info.process {
+                Some(proc) => {
+                    match waitpid(Some(Pid::from_raw(proc.pid)), Some(WaitPidFlag::WNOHANG)) {
+                        Ok(status) => {
+
+                        },
+                        Err(e) => {
+                            error!("could not wait child process: {}", e);
+                        }
+                    }
+                }
+                None => {}
+            }
+        }
+    });
+
     Launcher::run(Settings {
         window: window::Settings {
             size: (400, 500),
@@ -51,6 +81,7 @@ pub enum Message {
     MoveSelectedDown,
     ResetSelected,
     Search(SearchMessage),
+    Launch,
 }
 
 impl Application for Launcher {
@@ -92,6 +123,10 @@ impl Application for Launcher {
                     info!("trying to append non printable ascii {:?}", ch);
                 }
             },
+            Message::Launch => {
+                let entry = self.items[self.selected].clone();
+                let popen = subprocess::Exec::cmd(entry.exec).detached().popen();
+            }
         };
         Command::none()
     }
@@ -117,6 +152,7 @@ impl Application for Launcher {
 
     fn view(&mut self) -> Element<Message> {
         let selected = self.selected;
+        self.items = get_menu_applications(&self.search_val);
         let mut column = Column::new()
             .align_items(Align::Start)
             .width(Length::Fill)
@@ -126,7 +162,7 @@ impl Application for Launcher {
                     .height(Length::FillPortion(1)),
             );
         Container::new(
-            self.get_menu_applications(&self.search_val)
+            self.items
                 .iter()
                 .enumerate()
                 .fold(column, |sum, (idx, app)| {
@@ -155,19 +191,19 @@ impl Application for Launcher {
     }
 }
 
-impl Launcher {
-    fn get_menu_applications(&self, query: &str) -> Vec<application::Entry> {
-        let matcher = SkimMatcherV2::default();
+impl Launcher {}
 
-        generate_application_list()
-            .values()
-            .cloned()
-            .map(|x| (matcher.fuzzy_match(&x.name, &query).unwrap_or(0), x))
-            .sorted_by(|a, b| b.0.cmp(&a.0))
-            .map(|x| x.1)
-            .take(8)
-            .collect()
-    }
+fn get_menu_applications(query: &str) -> Vec<application::Entry> {
+    let matcher = SkimMatcherV2::default();
+
+    generate_application_list()
+        .values()
+        .cloned()
+        .map(|x| (matcher.fuzzy_match(&x.name, &query).unwrap_or(0), x))
+        .sorted_by(|a, b| b.0.cmp(&a.0))
+        .map(|x| x.1)
+        .take(8)
+        .collect()
 }
 
 fn handle_hotkey(key_code: keyboard::KeyCode) -> Option<Message> {
@@ -175,6 +211,7 @@ fn handle_hotkey(key_code: keyboard::KeyCode) -> Option<Message> {
     match key_code {
         keyboard::KeyCode::Up => Some(Message::MoveSelectedUp),
         keyboard::KeyCode::Down => Some(Message::MoveSelectedDown),
+        keyboard::KeyCode::Enter => Some(Message::Launch),
         _ => None,
     }
 }
