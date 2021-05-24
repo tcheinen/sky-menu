@@ -9,35 +9,33 @@ use crate::application::generate_application_list;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::{
-    button, executor, keyboard, text_input, window, Align, Application, Button, Color, Column,
-    Command, Container, Element, HorizontalAlignment, Length, Sandbox, Settings, Subscription,
-    Text, TextInput,
+    button, executor, keyboard, text_input, window, Align, Application, Button, Clipboard, Color,
+    Column, Command, Container, Element, HorizontalAlignment, Length, Sandbox, Settings,
+    Subscription, Text, TextInput,
 };
-use signal_hook::iterator::exfiltrator::WithOrigin;
 use iced_native::{event, subscription, Event};
 use itertools::Itertools;
 use log::{error, info};
 use nix::unistd::{fork, ForkResult};
 use signal_hook::consts::SIGCHLD;
+use signal_hook::iterator::exfiltrator::WithOrigin;
 use signal_hook::iterator::SignalsInfo;
 use std::os::unix::process::CommandExt;
 use std::process::Stdio;
 
 pub fn main() -> iced::Result {
-
     // SIGCHLD is signalled whenever a child process terminates
     // lets go ahead and wait them so they don't become defunct
     std::thread::spawn(|| {
         use nix::sys::wait::{waitpid, WaitPidFlag};
         use nix::unistd::Pid;
-        let mut signals = SignalsInfo::<WithOrigin>::new(&[SIGCHLD]).expect("signal hook couldn't be installed");
+        let mut signals =
+            SignalsInfo::<WithOrigin>::new(&[SIGCHLD]).expect("signal hook couldn't be installed");
         for info in &mut signals {
             match info.process {
                 Some(proc) => {
                     match waitpid(Some(Pid::from_raw(proc.pid)), Some(WaitPidFlag::WNOHANG)) {
-                        Ok(status) => {
-
-                        },
+                        Ok(status) => {}
                         Err(e) => {
                             error!("could not wait child process: {}", e);
                         }
@@ -48,16 +46,29 @@ pub fn main() -> iced::Result {
         }
     });
 
-    Launcher::run(Settings {
-        window: window::Settings {
-            size: (400, 500),
-            resizable: false,
-            transparent: true,
-            decorations: false,
-            ..window::Settings::default()
-        },
-        ..Settings::default()
-    })
+    {
+        use inputbot::{KeybdKey::*, MouseButton::*, *};
+        SpaceKey.bind(|| {
+            println!("space pressed");
+
+            if LControlKey.is_pressed() {
+                println!("ctrl + space pressed");
+            }
+        });
+        std::thread::spawn(|| {
+            handle_input_events();
+        });
+        Launcher::run(Settings {
+            window: window::Settings {
+                size: (400, 500),
+                resizable: false,
+                transparent: true,
+                decorations: false,
+                ..window::Settings::default()
+            },
+            ..Settings::default()
+        })
+    }
 }
 
 #[derive(Default)]
@@ -83,6 +94,7 @@ pub enum Message {
     ResetSelected,
     Search(SearchMessage),
     Launch,
+    ToggleVisible(Result<(), ()>),
 }
 
 impl Application for Launcher {
@@ -104,7 +116,7 @@ impl Application for Launcher {
         String::from("sky-menu")
     }
 
-    fn update(&mut self, message: Message) -> Command<Message> {
+    fn update(&mut self, message: Message, clipboard: &mut Clipboard) -> Command<Message> {
         match message {
             Message::MoveSelectedUp => {
                 self.selected = (self.selected as isize - 1).rem_euclid(8) as usize
@@ -132,24 +144,26 @@ impl Application for Launcher {
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())
                     .spawn();
-
+            }
+            Message::ToggleVisible(_) => {
+                println!("toggle visible");
             }
         };
         Command::none()
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        subscription::events_with(|event, status| {
+        iced_native::subscription::events_with(|event, status| {
             if let event::Status::Captured = status {
                 return None;
             }
 
             match event {
-                Event::Keyboard(keyboard::Event::KeyPressed {
+                Event::Keyboard(iced_native::keyboard::Event::KeyPressed {
                     modifiers,
                     key_code,
                 }) => handle_hotkey(key_code),
-                Event::Keyboard(keyboard::Event::CharacterReceived(c)) => {
+                Event::Keyboard(iced_native::keyboard::Event::CharacterReceived(c)) => {
                     Some(Message::Search(SearchMessage::Append(c)))
                 }
                 _ => None,
@@ -213,12 +227,12 @@ fn get_menu_applications(query: &str) -> Vec<application::Entry> {
         .collect()
 }
 
-fn handle_hotkey(key_code: keyboard::KeyCode) -> Option<Message> {
+fn handle_hotkey(key_code: iced_native::keyboard::KeyCode) -> Option<Message> {
     println!("{:?}", key_code);
     match key_code {
-        keyboard::KeyCode::Up => Some(Message::MoveSelectedUp),
-        keyboard::KeyCode::Down => Some(Message::MoveSelectedDown),
-        keyboard::KeyCode::Enter => Some(Message::Launch),
+        iced_native::keyboard::KeyCode::Up => Some(Message::MoveSelectedUp),
+        iced_native::keyboard::KeyCode::Down => Some(Message::MoveSelectedDown),
+        iced_native::keyboard::KeyCode::Enter => Some(Message::Launch),
         _ => None,
     }
 }
